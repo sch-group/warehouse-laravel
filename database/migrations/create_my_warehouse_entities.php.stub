@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateMyWarehouseEntities extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('my_warehouse_entities', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('entity_id');
+            $table->string('entity_type');
+            $table->string('entity_code');
+            $table->string('uuid', 36);
+            
+            $table->unique(['uuid']);
+
+            $table->index(['entity_id', 'entity_type', 'uuid']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('my_warehouse_entities');
+    }
+}
