@@ -3,6 +3,7 @@
 namespace SchGroup\MyWarehouse\Repositories;
 
 use App\Repositories\DbRepository;
+use Illuminate\Support\Collection;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 
 class DbWarehouseEntityRepository extends DbRepository implements WarehouseEntityRepository
@@ -10,7 +11,7 @@ class DbWarehouseEntityRepository extends DbRepository implements WarehouseEntit
     /**
      * @param array $with
      */
-    public function getNotMapped(array $with = [])
+    public function getNotMapped(array $with = []) : Collection
     {
         return $this->model
             ->with($with)

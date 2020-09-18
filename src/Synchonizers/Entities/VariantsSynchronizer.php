@@ -4,16 +4,14 @@
 namespace SchGroup\MyWarehouse\Synchonizers\Entities;
 
 
-use MoySklad\Components\Specs\LinkingSpecs;
-use MoySklad\Entities\Misc\Characteristics;
 use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Products\Product;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
-use SchGroup\MyWarehouse\Synchonizers\Entities\VariantLinkers\VariantLinker;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
+use SchGroup\MyWarehouse\Synchonizers\Entities\VariantLinkers\VariantLinker;
 
 class VariantsSynchronizer extends AbstractEntitySynchronizer
 {
@@ -105,7 +103,6 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
             $createdVariants = (new EntityList($this->client, $remoteVariants))
                 ->each($this->addRemoteProductRelationToVariant($existedRemoteProducts))
                 ->massCreate();
-            dump($createdVariants, "created variants");
             $this->applyUuidsToOurEntity($createdVariants, $ourVariants);
 
         } catch (\Exception $exception) {

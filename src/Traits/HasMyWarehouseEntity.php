@@ -3,8 +3,8 @@
 namespace SchGroup\MyWarehouse\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use SchGroup\MyWarehouse\Models\MyWarehouseEntity;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
  * @property MyWarehouseEntity morphMyWareHouse
@@ -27,7 +27,7 @@ trait HasMyWarehouseEntity
      * @param string $uuid
      * @param string $entityCode
      */
-    public function saveMyWareHouseEntity(string $uuid, string $entityCode)
+    public function saveMyWareHouseEntity(string $uuid, string $entityCode): void
     {
         $this->morphMyWareHouse()->create([
             'uuid' => $uuid,
@@ -43,10 +43,10 @@ trait HasMyWarehouseEntity
         return $this->morphMyWareHouse->uuid ?? "";
     }
     /*
-  |--------------------------------------------------------------------------
-  | SCOPES
-  |--------------------------------------------------------------------------
-  */
+      |--------------------------------------------------------------------------
+      | SCOPES
+      |--------------------------------------------------------------------------
+    */
     /**
      * Filter for given domain
      *

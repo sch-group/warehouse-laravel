@@ -7,7 +7,6 @@ use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Folders\ProductFolder;
-use SchGroup\MyWarehouse\Contracts\RemoteEntitySynchronizer;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 
