@@ -48,13 +48,20 @@ trait HasMyWarehouseEntity
       |--------------------------------------------------------------------------
     */
     /**
-     * Filter for given domain
-     *
      * @param $query
      * @return mixed - Query Builder
      */
     public function scopeHasNotMappedYet(Builder $query)
     {
         return $query->whereDoesntHave('morphMyWareHouse');
+    }
+
+    /**
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeAlreadyMapped(Builder $query)
+    {
+        return $query->whereHas('morphMyWareHouse');
     }
 }

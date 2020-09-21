@@ -11,7 +11,7 @@ use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Products\Product;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
-use SchGroup\MyWarehouse\Synchonizers\Entities\VariantLinkers\VariantLinker;
+use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 class VariantsSynchronizer extends AbstractEntitySynchronizer
 {
@@ -52,8 +52,8 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
     protected function applyExistedUuidsToOurEntity(): void
     {
         $ourVariants = $this->warehouseEntityRepository->getNotMapped()->keyBy('id');
-        $existedRemoteBrands = $this->findExistedRemoteEntities(Variant::class, $ourVariants);
-        $this->applyUuidsToOurEntity($existedRemoteBrands, $ourVariants);
+        $existedRemoteVariants = $this->findExistedRemoteEntities(Variant::class, $ourVariants);
+        $this->applyUuidsToOurEntity($existedRemoteVariants, $ourVariants);
     }
 
     /**
@@ -122,11 +122,28 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
         foreach ($ourVariants as $variant) {
             if (!empty($variant->product->getUuid())) {
                 $remoteVariants[] = (new Variant($this->client,
-                    $this->variantLinker->buildRemoteVariantFromOur($variant)
+                    $this->buildRemoteVariantFromOur($variant)
                 ));
             }
         }
         return $remoteVariants;
+    }
+
+    /**
+     * @param \App\Models\Products\Variant $variant
+     * @return array
+     */
+    public function buildRemoteVariantFromOur(\App\Models\Products\Variant $variant): array
+    {
+        return [
+            "name" => $variant->title,
+            "code" => (string)$variant->id,
+            "parent_uuid" => $variant->product->getUuid(),
+            "pack_quantity" => $variant->pack_quantity,
+            "extra_pack_quantity" => $variant->title,
+            "buyPrice" => $this->variantLinker->defineBuyPrice($variant),
+            "salePrices" => $this->variantLinker->defineSalePrices($variant),
+        ];
     }
 
     /**

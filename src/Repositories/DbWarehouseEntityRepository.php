@@ -11,11 +11,23 @@ class DbWarehouseEntityRepository extends DbRepository implements WarehouseEntit
     /**
      * @param array $with
      */
-    public function getNotMapped(array $with = []) : Collection
+    public function getNotMapped(array $with = []): Collection
     {
         return $this->model
             ->with($with)
             ->hasNotMappedYet()
+            ->get();
+    }
+
+    /**
+     * @param array $with
+     * @return Collection
+     */
+    public function getMapped(array $with = []): Collection
+    {
+        return $this->model
+            ->with($with)
+            ->alreadyMapped()
             ->get();
     }
 }

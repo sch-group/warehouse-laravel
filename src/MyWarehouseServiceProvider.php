@@ -3,27 +3,37 @@
 
 namespace SchGroup\MyWarehouse;
 
-use App\Models\Products\Product;
 use MoySklad\MoySklad;
 use App\Models\Brands\Brand;
+use App\Models\Products\Product;
 use App\Models\Products\Variant;
 use Illuminate\Support\ServiceProvider;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
+use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 use SchGroup\MyWarehouse\Repositories\DbWarehouseEntityRepository;
-use SchGroup\MyWarehouse\Synchonizers\Entities\BrandsEntitySynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\ProductsSynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\VariantsSynchronizer;
+use SchGroup\MyWarehouse\Synchonizers\Prices\VariantPricesSynchronizer;
+use SchGroup\MyWarehouse\Synchonizers\Entities\BrandsEntitySynchronizer;
 
 class MyWarehouseServiceProvider extends ServiceProvider
 {
     public function register()
     {
         $this->app->bind(MoySklad::class, function ($app, $params) {
-            $config = config('services.my_warehouse');
+            $config = config('my_warehouse');
             return MoySklad::getInstance($config['login'], $config['password']);
         });
 
+        $this->declareWarehouseRepository();
+    }
+
+    /**
+     *
+     */
+    protected function declareWarehouseRepository(): void
+    {
         $this->app->when(BrandsEntitySynchronizer::class)
             ->needs(WarehouseEntityRepository::class)
             ->give(function () {
@@ -42,9 +52,12 @@ class MyWarehouseServiceProvider extends ServiceProvider
                 return new DbWarehouseEntityRepository(new Product());
             });
 
-
+        $this->app->when(VariantPricesSynchronizer::class)
+            ->needs(WarehouseEntityRepository::class)
+            ->give(function () {
+                return new DbWarehouseEntityRepository(new Variant());
+            });
     }
-
 
 
     /**
@@ -69,6 +82,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
     {
         $this->commands([
             SyncEntities::class,
+            SyncVariantPrices::class,
         ]);
     }
 
@@ -85,6 +99,9 @@ class MyWarehouseServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     *
+     */
     protected function addConfigFile(): void
     {
         $this->publishes([

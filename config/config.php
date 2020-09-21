@@ -1,4 +1,6 @@
 <?php
 return [
-  'variant_linker_class' => ''
+    'login' => '',
+    'password' => '',
+    'variant_linker_class' => ''
 ];
