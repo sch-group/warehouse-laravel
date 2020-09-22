@@ -11,6 +11,7 @@ use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 class VariantPricesSynchronizer extends PricesSynchronizer
 {
+    const CHUNK_SIZE = 100;
     /**
      * @var MoySklad
      */
@@ -37,19 +38,38 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     }
 
     /**
-     *
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\EntityHasNoIdException
+     * @throws \Throwable
      */
     public function syncPrices(): void
     {
         $mappedVariants = $this->warehouseEntityRepository->getMapped();
         $remoteVariants = $this->findRemoteVariants();
-        $mappedVariants->chunk(50)->each(function ($variants) use ($remoteVariants) {
+        $mappedVariants->chunk(self::CHUNK_SIZE)->each(function ($variants) use ($remoteVariants) {
             $this->syncVariantsPrices($variants, $remoteVariants);
         });
     }
 
     /**
+     *  Запрос ->getList() долгий на получении всех упаковок,
+     *   но на дистанции дает выигрыш, чем при поиске каждого варианта по uuid в цикле
+     * @return array
+     * @throws \Exception
+     */
+    private function findRemoteVariants(): array
+    {
+        $remoteVariants = [];
+        Variant::query($this->client)->getList()->each(function (Variant $variant) use (&$remoteVariants) {
+            $remoteVariants[$variant->id] = $variant;
+        });
+
+        return $remoteVariants;
+    }
+
+    /**
      * @param Collection $variants
+     * @param array $remoteVariants
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \MoySklad\Exceptions\EntityHasNoIdException
      * @throws \Throwable
@@ -58,31 +78,38 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     {
         foreach ($variants as $ourVariant) {
             /*** @var \App\Models\Products\Variant $ourVariant */
-            if (empty($remoteVariants[$ourVariant->getUuid()])) {
+            if ($this->isRemoteVariantNotfound($ourVariant, $remoteVariants)) {
                 continue;
             }
             $remoteVariant = $remoteVariants[$ourVariant->getUuid()];
-            dump($remoteVariant);
-            if ($this->isNeedModify($ourVariant, $remoteVariant)) {
-                $remoteVariant->buyPrice = $this->variantLinker->defineBuyPrice($ourVariant);
-                $remoteVariant->salePrices = $this->variantLinker->defineSalePrices($ourVariant);
-                $remoteVariant->buildUpdate()->execute();
-            }
+            $this->syncVariant($ourVariant, $remoteVariant);
         }
     }
 
     /**
-     * @return array
-     * @throws \Exception
+     * @param \App\Models\Products\Variant $ourVariant
+     * @param array $remoteVariants
+     * @return bool
      */
-    public function findRemoteVariants(): array
+    private function isRemoteVariantNotfound(\App\Models\Products\Variant $ourVariant, array $remoteVariants): bool
     {
-        $remoteVariants = [];
-        Variant::query($this->client)->getList()->each(function (Variant $variant) {
-            $remoteVariants[$variant->id] = $variant;
-        });
+        return empty($ourVariant->getUuid()) && empty($remoteVariants[$ourVariant->getUuid()]);
+    }
 
-        return $remoteVariants;
+    /**
+     * @param \App\Models\Products\Variant $ourVariant
+     * @param Variant $remoteVariant
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\EntityHasNoIdException
+     * @throws \Throwable
+     */
+    public function syncVariant(\App\Models\Products\Variant $ourVariant, Variant $remoteVariant): void
+    {
+        if ($this->isNeedModify($ourVariant, $remoteVariant)) {
+            $remoteVariant->buyPrice = $this->variantLinker->defineBuyPrice($ourVariant);
+            $remoteVariant->salePrices = $this->variantLinker->defineSalePrices($ourVariant);
+            $remoteVariant->buildUpdate()->execute();
+        }
     }
 
     /**
@@ -95,13 +122,38 @@ class VariantPricesSynchronizer extends PricesSynchronizer
         $ourBuyPrice = $this->variantLinker->defineBuyPrice($ourVariant)['value'];
         $salePrice = $this->variantLinker->defineSalePrices($ourVariant)[0]['value'];
 
-        if (empty($remoteVariant->buyPrice) && empty($ourBuyPrice) ||
-            empty($remoteVariant->salePrices) && empty($salePrice)
-        ) {
+        if ($this->emptyColumns($remoteVariant, $ourBuyPrice, $salePrice)) {
             return false;
         }
+        $remoteBuyPrice = $remoteVariant->buyPrice->value;
+        $remoteSalePrice = $remoteVariant->salePrices[0]->value;
+        $buyPriceNotEqual = !$this->arePricesEqual($remoteBuyPrice, $ourBuyPrice);
+        $salePriceNotEqual = !$this->arePricesEqual($remoteSalePrice, $salePrice);
 
-        return $remoteVariant->buyPrice->value != $ourBuyPrice ||
-            $remoteVariant->salePrices[0]->value != $salePrice;
+        return $buyPriceNotEqual || $salePriceNotEqual;
+    }
+
+    /**
+     * @param AbstractEntity $remoteVariant
+     * @param $ourBuyPrice
+     * @param $salePrice
+     * @return bool
+     */
+    private function emptyColumns(AbstractEntity $remoteVariant, float $ourBuyPrice, float $salePrice): bool
+    {
+        return (empty($remoteVariant->buyPrice) && empty($ourBuyPrice)) ||
+            (empty($remoteVariant->salePrices) && empty($salePrice));
+    }
+
+    /**
+     * https://stackoverflow.com/questions/3148937/compare-floats-in-php
+     * Comparison for php float
+     * @param float $a
+     * @param float $b
+     * @return bool
+     */
+    private function arePricesEqual(float $a, float $b): bool
+    {
+        return abs(($a - $b) / $b) < 0.00001;
     }
 }
