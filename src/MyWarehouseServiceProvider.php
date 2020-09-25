@@ -8,6 +8,7 @@ use App\Models\Brands\Brand;
 use App\Models\Products\Product;
 use App\Models\Products\Variant;
 use Illuminate\Support\ServiceProvider;
+use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
@@ -25,40 +26,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
             $config = config('my_warehouse');
             return MoySklad::getInstance($config['login'], $config['password']);
         });
-
-        $this->declareWarehouseRepository();
     }
-
-    /**
-     *
-     */
-    protected function declareWarehouseRepository(): void
-    {
-        $this->app->when(BrandsEntitySynchronizer::class)
-            ->needs(WarehouseEntityRepository::class)
-            ->give(function () {
-                return new DbWarehouseEntityRepository(new Brand());
-            });
-
-        $this->app->when(VariantsSynchronizer::class)
-            ->needs(WarehouseEntityRepository::class)
-            ->give(function () {
-                return new DbWarehouseEntityRepository(new Variant());
-            });
-
-        $this->app->when(ProductsSynchronizer::class)
-            ->needs(WarehouseEntityRepository::class)
-            ->give(function () {
-                return new DbWarehouseEntityRepository(new Product());
-            });
-
-        $this->app->when(VariantPricesSynchronizer::class)
-            ->needs(WarehouseEntityRepository::class)
-            ->give(function () {
-                return new DbWarehouseEntityRepository(new Variant());
-            });
-    }
-
 
     /**
      * Bootstrap any application services.
@@ -83,6 +51,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
         $this->commands([
             SyncEntities::class,
             SyncVariantPrices::class,
+            AddFirstStockBalances::class,
         ]);
     }
 

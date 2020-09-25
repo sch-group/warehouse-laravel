@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Products\Product;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
+use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
@@ -25,7 +26,7 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
      */
     private $client;
     /**
-     * @var WarehouseEntityRepository
+     * @var VariantWarehouseRepository
      */
     private $warehouseEntityRepository;
 
@@ -37,9 +38,9 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
     /**
      * VariantsSynchronizer constructor.
      * @param MoySklad $client
-     * @param WarehouseEntityRepository $warehouseEntityRepository
+     * @param VariantWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, WarehouseEntityRepository $warehouseEntityRepository)
+    public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseEntityRepository)
     {
         $this->client = $client;
         $this->warehouseEntityRepository = $warehouseEntityRepository;

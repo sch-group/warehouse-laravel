@@ -3,11 +3,25 @@
 namespace SchGroup\MyWarehouse\Repositories;
 
 use App\Repositories\DbRepository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 
-class DbWarehouseEntityRepository extends DbRepository implements WarehouseEntityRepository
+class DbWarehouseEntityRepository implements WarehouseEntityRepository
 {
+    /**
+     * @var Model
+     */
+    protected $model;
+
+    /**
+     * DbWarehouseEntityRepository constructor.
+     * @param Model $model
+     */
+    public function __construct(Model $model)
+    {
+        $this->model = $model;
+    }
     /**
      * @param array $with
      */

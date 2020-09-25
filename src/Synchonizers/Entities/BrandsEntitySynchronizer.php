@@ -7,7 +7,7 @@ use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Folders\ProductFolder;
-use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
+use SchGroup\MyWarehouse\Repositories\BrandWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 
 class BrandsEntitySynchronizer extends AbstractEntitySynchronizer
@@ -21,16 +21,16 @@ class BrandsEntitySynchronizer extends AbstractEntitySynchronizer
      */
     private $client;
     /**
-     * @var WarehouseEntityRepository
+     * @var BrandWarehouseRepository
      */
     private $warehouseEntityRepository;
 
     /**
      * BrandsSynchronizer constructor.
      * @param MoySklad $client
-     * @param WarehouseEntityRepository $warehouseEntityRepository
+     * @param BrandWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, WarehouseEntityRepository $warehouseEntityRepository)
+    public function __construct(MoySklad $client, BrandWarehouseRepository $warehouseEntityRepository)
     {
         $this->client = $client;
         $this->warehouseEntityRepository = $warehouseEntityRepository;

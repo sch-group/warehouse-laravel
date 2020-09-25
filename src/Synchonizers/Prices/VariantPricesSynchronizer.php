@@ -154,6 +154,6 @@ class VariantPricesSynchronizer extends PricesSynchronizer
      */
     private function arePricesEqual(float $a, float $b): bool
     {
-        return abs(($a - $b) / $b) < 0.00001;
+        return abs(($a - $b)) < 0.00001;
     }
 }
