@@ -1,22 +1,13 @@
 <?php
 
 
-namespace SchGroup\MyWarehouse;
+namespace SchGroup\MyWarehouse;;
 
 use MoySklad\MoySklad;
-use App\Models\Brands\Brand;
-use App\Models\Products\Product;
-use App\Models\Products\Variant;
 use Illuminate\Support\ServiceProvider;
 use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
-use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
-use SchGroup\MyWarehouse\Repositories\DbWarehouseEntityRepository;
-use SchGroup\MyWarehouse\Synchonizers\Entities\ProductsSynchronizer;
-use SchGroup\MyWarehouse\Synchonizers\Entities\VariantsSynchronizer;
-use SchGroup\MyWarehouse\Synchonizers\Prices\VariantPricesSynchronizer;
-use SchGroup\MyWarehouse\Synchonizers\Entities\BrandsEntitySynchronizer;
 
 class MyWarehouseServiceProvider extends ServiceProvider
 {
