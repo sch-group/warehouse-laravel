@@ -2,20 +2,24 @@
 
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances;
 
-use MoySklad\Components\Specs\LinkingSpecs;
-use MoySklad\Entities\Documents\Movements\Enter;
-use MoySklad\Entities\Documents\Positions\EnterPosition;
-use MoySklad\Entities\Organization;
-use MoySklad\Entities\Products\Product;
-use MoySklad\Entities\Products\Variant;
+use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
-use MoySklad\MoySklad;
+use Illuminate\Support\Collection;
+use MoySklad\Entities\Organization;
+use MoySklad\Entities\Products\Variant;
+use MoySklad\Entities\Documents\Movements\Enter;
+use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 
+/**
+ * Загружает текущее состояние склада available_quantity через оприходвания в моем складе
+ * Class FirstEntersSynchronizer
+ * @package SchGroup\MyWarehouse\Synchonizers\StockBalances
+ */
 class FirstEntersSynchronizer
 {
-    const CHUNK_SIZE = 100;
+    const MAX_ENTER_SIZE = 100;
     /**
      * @var MoySklad
      */
@@ -25,54 +29,144 @@ class FirstEntersSynchronizer
      */
     private $warehouseRepository;
 
+    /**
+     * FirstEntersSynchronizer constructor.
+     * @param MoySklad $client
+     * @param VariantWarehouseRepository $warehouseRepository
+     */
     public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseRepository)
     {
         $this->client = $client;
         $this->warehouseRepository = $warehouseRepository;
     }
 
-    public function addEntersOfVariantsAvailableQuantity()
+    /**
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\EntityHasNoIdException
+     * @throws \Throwable
+     */
+    public function createStockBalancesByVariantsEnters(): void
     {
+        $this->deleteOldEnters();
+        list($store, $organization) = $this->defineStoreAndOrganization();
+        $ourVariants = $this->loadOurVariants();
+        $sizeOfVariants = $ourVariants->count();
+        $chunkCounter = 0;
+        while ($chunkCounter < $sizeOfVariants) {
+            $chunkedRemotedVariants = $this->chunkRemoteVariants($chunkCounter);
+            $enterPositions = $this->buildEnterPositions($chunkedRemotedVariants, $ourVariants);
+            $this->addNewEnter($organization, $store, $enterPositions);
+            $chunkCounter += self::MAX_ENTER_SIZE;
+        }
+    }
 
-        $variantId = "010b5529-f830-11ea-0a80-05210012e7ae";
-        $productId = "f4437f99-f800-11ea-0a80-0521000b7be8";
+    /**
+     * @throws \MoySklad\Exceptions\EntityHasNoIdException
+     */
+    private function deleteOldEnters(): void
+    {
+        Enter::query($this->client)->getList()->each(function (Enter $enter) {
+            $enter->delete();
+        });
+    }
+
+    /**
+     * @return array
+     * @throws \Throwable
+     */
+    private function defineStoreAndOrganization(): array
+    {
         $organizationId = config('my_warehouse.organization_uuid');
         $storeId = config('my_warehouse.store_uuid');
-//        $remoteVariant = Variant::query($this->client)->byId($variantId);
-//        $remoteProduct = Product::query($this->client)->byId($productId);
-//        $organization = Organization::query($this->client)->byId($organizationId);
+        $store = Store::query($this->client)->byId($storeId);
+        $organization = Organization::query($this->client)->byId($organizationId);
 
-//        $store = Store::query($this->client)->byId($storeId);
-//
-//        $remoteProduct->quantity = 2;
-//        $remoteVariant->quantity = 3;
-//
-//        $enterPositions = new EntityList($this->client, [$remoteVariant]);
-//
-//        $enter = new Enter($this->client, [
-//            "name" => (string)rand(),
-//        ]);
-//
-//        $enter = $enter->buildCreation()
-//            ->addOrganization($organization)
-//            ->addStore($store)
-//            ->addPositionList($enterPositions)
-//            ->execute();
-//        ;
+        return [$store, $organization];
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    private function defineEnterName(): string
+    {
+        return (new \DateTime('now'))->format('Y-m-d H:i:s') . "_" . hash('md5', rand());
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection
+     */
+    private function loadOurVariants(): Collection
+    {
+        return $this->warehouseRepository
+            ->getMapped(['morphMyWarehouse'])
+            ->where('available_quantity', '>', 0)
+            ->keyBy('morphMyWarehouse.uuid');
+    }
+
+    /**
+     * @param int $chunkCounter
+     * @return EntityList
+     * @throws \Exception
+     */
+    private function chunkRemoteVariants(int $chunkCounter): EntityList
+    {
+        return Variant::query($this->client, QuerySpecs::create([
+            "offset" => $chunkCounter,
+            "maxResults" => self::MAX_ENTER_SIZE,
+        ]))->getList();
+    }
+
+    /**
+     * @param EntityList $chunkedRemotedVariants
+     * @param Collection $ourVariants
+     * @return EntityList
+     */
+    private function buildEnterPositions(EntityList $chunkedRemotedVariants, Collection $ourVariants): EntityList
+    {
+        $enterPositions = new EntityList($this->client);
+        $chunkedRemotedVariants->each(function (Variant $remoteVariant) use ($ourVariants, $enterPositions) {
+            $this->collectEnterPositions($ourVariants, $remoteVariant, $enterPositions);
+        });
+
+        return $enterPositions;
+    }
+
+    /**
+     * @param Collection $ourVariants
+     * @param Variant $remoteVariant
+     * @param EntityList $enterPositions
+     */
+    private function collectEnterPositions(Collection $ourVariants, Variant $remoteVariant, EntityList $enterPositions): void
+    {
+        if (!empty($ourVariants[$remoteVariant->id])) {
+            /** @var \App\Models\Products\Variant $ourVariant */
+            $ourVariant = $ourVariants[$remoteVariant->id];
+            $remoteVariant->quantity = $ourVariant->available_quantity;
+            $remoteVariant->price = $ourVariant->average_purchase_price * 100;
+            $enterPositions->push($remoteVariant);
+        }
+    }
+
+    /**
+     * @param $organization
+     * @param $store
+     * @param EntityList $enterPositions
+     * @return mixed
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     */
+    private function addNewEnter($organization, $store, EntityList $enterPositions): void
+    {
         $enter = new Enter($this->client, [
-            "name" => (string)rand(),
+            "name" => $this->defineEnterName(),
         ]);
-//        $enter = $enter->buildCreation()
-//            ->addOrganization($organization)
-//            ->addStore($store)
-//            ->addPositionList($enterPositions)
-//            ->execute();
-//        dd($enter);
 
-        $mappedVariants = $this->warehouseRepository->getMapped(['morphMyWarehouse'])->keyBy('morphMyWarehouse.uuid');
-        dd($mappedVariants);
-
-
+        $enter
+            ->buildCreation()
+            ->addOrganization($organization)
+            ->addStore($store)
+            ->addPositionList($enterPositions)
+            ->execute();
     }
 
 }

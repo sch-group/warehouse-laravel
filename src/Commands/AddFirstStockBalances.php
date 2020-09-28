@@ -31,6 +31,6 @@ class AddFirstStockBalances extends Command
         /** @var FirstEntersSynchronizer $firstEnterSynchronizer */
         $firstEnterSynchronizer = app(FirstEntersSynchronizer::class);
 
-        $firstEnterSynchronizer->addEntersOfVariantsAvailableQuantity();
+        $firstEnterSynchronizer->createStockBalancesByVariantsEnters();
     }
 }
