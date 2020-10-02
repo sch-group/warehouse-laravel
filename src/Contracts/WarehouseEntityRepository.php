@@ -19,4 +19,10 @@ interface WarehouseEntityRepository
      * @return Collection
      */
     public function getMapped(array $with = []): Collection;
+
+    /**
+     *
+     */
+    public function destroyMapped(): void;
+
 }

@@ -26,12 +26,13 @@ trait HasMyWarehouseEntity
     /**
      * @param string $uuid
      * @param string $entityCode
+     * @param string $entityType
      */
     public function saveMyWareHouseEntity(string $uuid, string $entityCode): void
     {
         $this->morphMyWareHouse()->create([
             'uuid' => $uuid,
-            'entity_code' => $entityCode
+            'entity_code' => $entityCode,
         ]);
     }
 

@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use MoySklad\Entities\AbstractEntity;
 use MoySklad\Entities\Products\Variant;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
+use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 class VariantPricesSynchronizer extends PricesSynchronizer
@@ -17,7 +18,7 @@ class VariantPricesSynchronizer extends PricesSynchronizer
      */
     private $client;
     /**
-     * @var WarehouseEntityRepository
+     * @var VariantWarehouseRepository
      */
     private $warehouseEntityRepository;
 
@@ -28,9 +29,9 @@ class VariantPricesSynchronizer extends PricesSynchronizer
 
     /**
      * VariantPricesSynchronizer constructor.
-     * @param WarehouseEntityRepository $warehouseEntityRepository
+     * @param VariantWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, WarehouseEntityRepository $warehouseEntityRepository)
+    public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseEntityRepository)
     {
         $this->client = $client;
         $this->warehouseEntityRepository = $warehouseEntityRepository;
@@ -93,7 +94,7 @@ class VariantPricesSynchronizer extends PricesSynchronizer
      */
     private function isRemoteVariantNotfound(\App\Models\Products\Variant $ourVariant, array $remoteVariants): bool
     {
-        return empty($ourVariant->getUuid()) && empty($remoteVariants[$ourVariant->getUuid()]);
+        return empty($remoteVariants[$ourVariant->getUuid()]);
     }
 
     /**
@@ -106,6 +107,7 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     public function syncVariant(\App\Models\Products\Variant $ourVariant, Variant $remoteVariant): void
     {
         if ($this->isNeedModify($ourVariant, $remoteVariant)) {
+            dump($ourVariant);
             $remoteVariant->buyPrice = $this->variantLinker->defineBuyPrice($ourVariant);
             $remoteVariant->salePrices = $this->variantLinker->defineSalePrices($ourVariant);
             $remoteVariant->buildUpdate()->execute();
@@ -141,8 +143,8 @@ class VariantPricesSynchronizer extends PricesSynchronizer
      */
     private function emptyColumns(AbstractEntity $remoteVariant, float $ourBuyPrice, float $salePrice): bool
     {
-        return (empty($remoteVariant->buyPrice) && empty($ourBuyPrice)) ||
-            (empty($remoteVariant->salePrices) && empty($salePrice));
+        return (empty($remoteVariant->buyPrice) || empty($ourBuyPrice)) ||
+            (empty($remoteVariant->salePrices) || empty($salePrice));
     }
 
     /**

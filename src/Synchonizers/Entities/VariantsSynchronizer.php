@@ -9,7 +9,6 @@ use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Products\Product;
-use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;

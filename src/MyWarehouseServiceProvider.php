@@ -6,6 +6,7 @@ namespace SchGroup\MyWarehouse;;
 use MoySklad\MoySklad;
 use Illuminate\Support\ServiceProvider;
 use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
+use SchGroup\MyWarehouse\Commands\AddReservedOrders;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
 
@@ -43,6 +44,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
             SyncEntities::class,
             SyncVariantPrices::class,
             AddFirstStockBalances::class,
+            AddReservedOrders::class,
         ]);
     }
 

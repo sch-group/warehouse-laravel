@@ -44,4 +44,12 @@ class DbWarehouseEntityRepository implements WarehouseEntityRepository
             ->alreadyMapped()
             ->get();
     }
+
+    /**
+     *
+     */
+    public function destroyMapped(): void
+    {
+        $this->model->alreadyMapped()->delete();
+    }
 }
