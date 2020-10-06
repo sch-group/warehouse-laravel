@@ -7,6 +7,7 @@ namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
+use MoySklad\Entities\Organization;
 use SchGroup\MyWarehouse\Traits\HasMyWarehouseEntity;
 
 trait WarehouseEntityHelper
@@ -42,5 +43,16 @@ trait WarehouseEntityHelper
             ->filter(function ($remoteEntity) use ($ourEntities) {
                 return $ourEntities->keys()->contains($remoteEntity->code ?? "");
             });
+    }
+
+    /**
+     * @return \MoySklad\Entities\AbstractEntity
+     * @throws \Throwable
+     */
+    public function getOrganization(): \MoySklad\Entities\AbstractEntity
+    {
+        $organizationId = config('my_warehouse.organization_uuid');
+
+        return Organization::query($this->client)->byId($organizationId);
     }
 }

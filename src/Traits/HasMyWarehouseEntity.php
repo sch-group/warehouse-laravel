@@ -26,7 +26,6 @@ trait HasMyWarehouseEntity
     /**
      * @param string $uuid
      * @param string $entityCode
-     * @param string $entityType
      */
     public function saveMyWareHouseEntity(string $uuid, string $entityCode): void
     {

@@ -3,14 +3,13 @@
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances;
 
 use MoySklad\MoySklad;
-use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
-use MoySklad\Entities\Organization;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Enter;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 
 /**
  * Загружает текущее состояние склада available_quantity через оприходвания в моем складе
@@ -28,15 +27,24 @@ class FirstEntersSynchronizer
      * @var VariantWarehouseRepository
      */
     private $warehouseRepository;
+    /**
+     * @var StoreDataKeeper
+     */
+    private $storeDataKeeper;
 
     /**
      * FirstEntersSynchronizer constructor.
      * @param MoySklad $client
+     * @param StoreDataKeeper $storeDataKeeper
      * @param VariantWarehouseRepository $warehouseRepository
      */
-    public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseRepository)
+    public function __construct(
+        MoySklad $client,
+        StoreDataKeeper $storeDataKeeper,
+        VariantWarehouseRepository $warehouseRepository)
     {
         $this->client = $client;
+        $this->storeDataKeeper = $storeDataKeeper;
         $this->warehouseRepository = $warehouseRepository;
     }
 
@@ -48,7 +56,8 @@ class FirstEntersSynchronizer
     public function createStockBalancesByVariantsEnters(): void
     {
         $this->deleteOldEnters();
-        list($store, $organization) = $this->defineStoreAndOrganization();
+        $store = $this->storeDataKeeper->defineOrganization();
+        $organization = $this->storeDataKeeper->defineStore();
         $ourVariants = $this->loadOurVariants();
         $sizeOfVariants = $ourVariants->count();
         $chunkCounter = 0;
@@ -68,29 +77,6 @@ class FirstEntersSynchronizer
         Enter::query($this->client)->getList()->each(function (Enter $enter) {
             $enter->delete();
         });
-    }
-
-    /**
-     * @return array
-     * @throws \Throwable
-     */
-    private function defineStoreAndOrganization(): array
-    {
-        $organizationId = config('my_warehouse.organization_uuid');
-        $storeId = config('my_warehouse.store_uuid');
-        $store = Store::query($this->client)->byId($storeId);
-        $organization = Organization::query($this->client)->byId($organizationId);
-
-        return [$store, $organization];
-    }
-
-    /**
-     * @return string
-     * @throws \Exception
-     */
-    private function defineEnterName(): string
-    {
-        return (new \DateTime('now'))->format('Y-m-d H:i:s') . "_" . hash('md5', rand());
     }
 
     /**
@@ -167,6 +153,15 @@ class FirstEntersSynchronizer
             ->addStore($store)
             ->addPositionList($enterPositions)
             ->execute();
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    private function defineEnterName(): string
+    {
+        return (new \DateTime('now'))->format('Y-m-d H:i:s') . "_" . hash('md5', rand());
     }
 
 }

@@ -9,6 +9,7 @@ use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
 use SchGroup\MyWarehouse\Commands\AddReservedOrders;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
+use SchGroup\MyWarehouse\Commands\TestCreateOrder;
 
 class MyWarehouseServiceProvider extends ServiceProvider
 {
@@ -45,6 +46,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
             SyncVariantPrices::class,
             AddFirstStockBalances::class,
             AddReservedOrders::class,
+            TestCreateOrder::class,
         ]);
     }
 
