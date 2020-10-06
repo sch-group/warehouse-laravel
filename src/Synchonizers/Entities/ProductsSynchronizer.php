@@ -41,16 +41,6 @@ class ProductsSynchronizer extends AbstractEntitySynchronizer
     /**
      * @throws \Exception
      */
-    public function synchronize(): void
-    {
-        $this->applyExistedUuidsToOurEntity();
-
-        $this->addOurEntityToRemoteWarehouse();
-    }
-
-    /**
-     * @throws \Exception
-     */
     protected function applyExistedUuidsToOurEntity(): void
     {
         $ourNotMappedProducts = $this->warehouseEntityRepository->getNotMapped()->keyBy('id');

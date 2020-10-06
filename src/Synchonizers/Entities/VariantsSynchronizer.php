@@ -155,7 +155,7 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
         return function (Variant $remoteVariant) use ($existedRemoteProducts) {
             if ($this->isParentProductFoundForVariant($existedRemoteProducts, $remoteVariant)) {
                 $remoteProduct = $existedRemoteProducts[$remoteVariant->parent_uuid];
-                $this->variantLinker->linkRemoteVariantToProduct($remoteVariant, $remoteProduct);
+                $this->variantLinker->linkRemoteProductToVariant($remoteVariant, $remoteProduct);
             }
         };
     }

@@ -23,7 +23,7 @@ class ReservedOrdersSynchronizer
 {
     use WarehouseEntityHelper;
 
-    const CHUNK_SIZE = 50;
+    const CHUNK_SIZE = 2;
     /**
      * @var OrdersWarehouseRepository
      */
@@ -50,7 +50,6 @@ class ReservedOrdersSynchronizer
     public function createStorageReservedOrders(): void
     {
         $this->deleteAllMappedOrders();
-        dd("kek");
         $reservedOrders = $this->ordersWarehouseRepository->getReservedNotShippedOrders()->keyBy('id');
         $organization = $this->getOrganization();
         $reservedOrders->chunk(self::CHUNK_SIZE)->each(function (Collection $chunkedOrders) use ($organization) {
@@ -110,6 +109,7 @@ class ReservedOrdersSynchronizer
             ]);
             $remoteOrders[] = $remoteOrder;
         });
+
         return $remoteOrders;
     }
 
@@ -165,8 +165,8 @@ class ReservedOrdersSynchronizer
     private function getOrganization(): AbstractEntity
     {
         $organizationId = config('my_warehouse.organization_uuid');
-        $organization = Organization::query($this->client)->byId($organizationId);
-        return $organization;
+
+        return Organization::query($this->client)->byId($organizationId);
     }
 
 }

@@ -2,10 +2,10 @@
 
 namespace SchGroup\MyWarehouse\Repositories;
 
-use App\Repositories\DbRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
+use SchGroup\MyWarehouse\Models\MyWarehouseEntity;
 
 class DbWarehouseEntityRepository implements WarehouseEntityRepository
 {
@@ -50,6 +50,6 @@ class DbWarehouseEntityRepository implements WarehouseEntityRepository
      */
     public function destroyMapped(): void
     {
-        $this->model->alreadyMapped()->delete();
+        MyWarehouseEntity::where('entity_type', $this->model->getMorphClass())->delete();
     }
 }
