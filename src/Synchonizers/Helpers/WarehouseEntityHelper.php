@@ -15,6 +15,7 @@ trait WarehouseEntityHelper
     /**
      * @param EntityList $existedRemoteEntities
      * @param Collection $ourEntities
+     * @throws \Throwable
      */
     public function applyUuidsToOurEntity(EntityList $existedRemoteEntities, Collection $ourEntities): void
     {
@@ -27,6 +28,7 @@ trait WarehouseEntityHelper
                 $ourEntityToUpdate->saveMyWareHouseEntity($uuid, $code);
             });
         });
+        dd("kek");
     }
 
     /**

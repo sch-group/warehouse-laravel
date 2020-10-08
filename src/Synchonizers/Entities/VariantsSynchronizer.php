@@ -47,7 +47,7 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     protected function applyExistedUuidsToOurEntity(): void
     {
@@ -77,7 +77,6 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
     protected function findRemoteProducts(): array
     {
         $existedRemoteProducts = [];
-
         Product::query($this->client)->getList()->each(
             function (Product $remoteProduct) use (&$existedRemoteProducts) {
                 $existedRemoteProducts[$remoteProduct->id] = $remoteProduct;
@@ -90,7 +89,7 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
     /**
      * @param Collection $ourVariants
      * @param array $existedRemoteProducts
-     * @return void
+     * @throws \Throwable
      */
     protected function createRemoteVariants(Collection $ourVariants, array $existedRemoteProducts): void
     {

@@ -19,6 +19,7 @@ class CreateOrderInMyWarehouseJob implements ShouldQueue
 
     /**
      * CreateOrderInMyWarehouse constructor.
+     * @param Order $order
      */
     public function __construct(Order $order)
     {

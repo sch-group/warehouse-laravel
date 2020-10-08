@@ -7,6 +7,9 @@ use SchGroup\MyWarehouse\Jobs\CreateOrderInMyWarehouseJob;
 
 class MyWarehouseCreateOrderListener
 {
+    /**
+     * @param OrderWasCreated $orderWasCreated
+     */
     public function handle(OrderWasCreated $orderWasCreated)
     {
         if (isProduction()) {

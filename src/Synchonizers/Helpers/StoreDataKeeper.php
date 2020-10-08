@@ -4,6 +4,8 @@
 namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 
 
+use App\Models\Collections\Collection;
+use MoySklad\Entities\Documents\Orders\CustomerOrder;
 use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
 use MoySklad\Entities\Organization;
@@ -35,6 +37,7 @@ class StoreDataKeeper
 
         return Store::query($this->client)->byId($storeId);
     }
+
     /**
      * @return AbstractEntity
      * @throws \Throwable
@@ -44,5 +47,21 @@ class StoreDataKeeper
         $organizationId = config('my_warehouse.organization_uuid');
 
         return Organization::query($this->client)->byId($organizationId);
+    }
+
+    /**
+     * @return array
+     * @throws \Throwable
+     */
+    public function defineOrderStateListKeyedByUuid(): array
+    {
+        $metaData = CustomerOrder::getMetaData($this->client);
+        $orderAvailableStates = $metaData->states;
+        $orderStateList = [];
+        foreach ($orderAvailableStates as $state) {
+            $orderStateList[$state->id] = $state;
+        }
+
+        return $orderStateList;
     }
 }

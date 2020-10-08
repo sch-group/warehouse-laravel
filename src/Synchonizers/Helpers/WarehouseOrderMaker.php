@@ -28,6 +28,7 @@ class WarehouseOrderMaker
     /**
      * WarehouseOrderMaker constructor.
      * @param MoySklad $client
+     * @param StoreDataKeeper $storeDataKeeper
      */
     public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper)
     {
@@ -45,11 +46,14 @@ class WarehouseOrderMaker
     {
         $remoteOrder = $this->createInstanceOfRemoteOrder($ourOrder);
         $organization = $this->storeDataKeeper->defineOrganization();
-        $createdOrderList = (new EntityList($this->client, [$remoteOrder]))->each(function (CustomerOrder $remoteOrder) use ($organization, $ourOrder) {
-            $this->addRelationsToRemoteOrder($ourOrder,$remoteOrder, $organization);
-        })->massCreate();
+        $remoteOrderStates = $this->storeDataKeeper->defineOrderStateListKeyedByUuid();
+        $createdOrderList = (new EntityList($this->client, [$remoteOrder]))
+            ->each(function (CustomerOrder $remoteOrder) use ($organization, $ourOrder, $remoteOrderStates) {
+                $this->addRelationsToRemoteOrder($ourOrder, $remoteOrder, $organization, $remoteOrderStates);
+            })->massCreate();
+
         $uuid = $createdOrderList[0]->id;
-        $ourOrder->saveMyWareHouseEntity($uuid,$ourOrder->id);
+        $ourOrder->saveMyWareHouseEntity($uuid, $ourOrder->id);
     }
 
     /**
@@ -63,23 +67,34 @@ class WarehouseOrderMaker
             "code" => (string)$order->id,
         ]);
     }
+
     /**
      * @param Order $ourOrder
      * @param CustomerOrder $remoteOrder
      * @param AbstractEntity $organization
+     * @param array $remoteStatuses
+     * @return CustomerOrder
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
-    public function addRelationsToRemoteOrder(Order $ourOrder, CustomerOrder $remoteOrder, AbstractEntity $organization): CustomerOrder
+    public function addRelationsToRemoteOrder(
+        Order $ourOrder,
+        CustomerOrder $remoteOrder,
+        AbstractEntity $organization,
+        array $remoteStatuses
+    ): CustomerOrder
     {
         $counterParty = $this->createOrFindCounterParty($ourOrder);
         $orderPositions = $this->defineOrderPositions($ourOrder);
         $positionList = new EntityList($this->client, $orderPositions);
+        $state = $remoteStatuses[$ourOrder->status->getUuid()];
+
         $remoteOrder
             ->buildCreation()
             ->addCounterparty($counterParty)
             ->addOrganization($organization)
+            ->addState($state)
             ->addPositionList($positionList);
 
         return $remoteOrder;

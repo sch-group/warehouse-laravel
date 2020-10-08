@@ -49,7 +49,8 @@ class ReservedOrdersSynchronizer
         StoreDataKeeper $storeDataKeeper,
         WarehouseOrderMaker $warehouseOrderMaker,
         OrdersWarehouseRepository $ordersWarehouseRepository
-    ){
+    )
+    {
         $this->client = $client;
         $this->storeDataKeeper = $storeDataKeeper;
         $this->warehouseOrderMaker = $warehouseOrderMaker;
@@ -65,8 +66,9 @@ class ReservedOrdersSynchronizer
         $this->deleteAllMappedOrders();
         $reservedOrders = $this->ordersWarehouseRepository->getReservedNotShippedOrders()->keyBy('id');
         $organization = $this->storeDataKeeper->defineOrganization();
-        $reservedOrders->chunk(self::CHUNK_SIZE)->each(function (Collection $chunkedOrders) use ($organization) {
-            $this->createRemoteOrders($chunkedOrders, $organization);
+        $remoteOrderStates = $this->storeDataKeeper->defineOrderStateListKeyedByUuid();
+        $reservedOrders->chunk(self::CHUNK_SIZE)->each(function (Collection $chunkedOrders) use ($organization, $remoteOrderStates) {
+            $this->createRemoteOrders($chunkedOrders, $organization, $remoteOrderStates);
         });
     }
 
@@ -83,19 +85,21 @@ class ReservedOrdersSynchronizer
 
     /**
      * @param Collection $chunkedOrders
-     * @param AbstractEntity $organization
+     * @param Organization $organization
+     * @param array $remoteStatuses
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
-    private function createRemoteOrders(Collection $chunkedOrders, Organization $organization): void
+    private function createRemoteOrders(Collection $chunkedOrders, Organization $organization, array $remoteStatuses): void
     {
         $remoteOrders = $this->buildRemoteOrders($chunkedOrders);
 
         $createdRemoteOrders = (new EntityList($this->client, $remoteOrders))
-            ->each(function (CustomerOrder $remoteOrder) use ($organization, $chunkedOrders) {
+            ->each(function (CustomerOrder $remoteOrder) use ($organization, $chunkedOrders, $remoteStatuses) {
                 /** @var Order $ourOrder */
                 $ourOrder = $chunkedOrders[$remoteOrder->code];
-                $this->warehouseOrderMaker->addRelationsToRemoteOrder($ourOrder, $remoteOrder, $organization);
+                $this->warehouseOrderMaker->addRelationsToRemoteOrder($ourOrder, $remoteOrder, $organization, $remoteStatuses);
             })->massCreate();
 
         $this->applyUuidsToOurEntity($createdRemoteOrders, $chunkedOrders);

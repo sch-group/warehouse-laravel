@@ -11,7 +11,6 @@ abstract class AbstractEntitySynchronizer
      */
     public function synchronize(): void
     {
-
         $this->applyExistedUuidsToOurEntity();
 
         $this->addOurEntityToRemoteWarehouse();
