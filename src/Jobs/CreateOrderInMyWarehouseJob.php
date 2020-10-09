@@ -6,7 +6,7 @@ use App\Models\Orders\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseOrderMaker;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\OrderMaker;
 
 class CreateOrderInMyWarehouseJob implements ShouldQueue
 {
@@ -27,12 +27,12 @@ class CreateOrderInMyWarehouseJob implements ShouldQueue
     }
 
     /**
-     * @param WarehouseOrderMaker $warehouseOrderMaker
+     * @param OrderMaker $warehouseOrderMaker
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
-    public function handle(WarehouseOrderMaker $warehouseOrderMaker)
+    public function handle(OrderMaker $warehouseOrderMaker)
     {
         $warehouseOrderMaker->createSingleOrder($this->order);
     }

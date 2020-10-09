@@ -13,7 +13,7 @@ class MyWarehouseUpdateOrderListener
     public function handle(OrderWasUpdated $event)
     {
         if ($this->isNeedToUpdateOrderInMyWarehouse($event)) {
-//            UpdateOrderInMyWarehouseJob::dispatch($event->order)->onQueue('orders');
+            UpdateOrderInMyWarehouseJob::dispatch($event->order)->onQueue('orders');
         }
     }
 
@@ -23,6 +23,10 @@ class MyWarehouseUpdateOrderListener
      */
     public function isNeedToUpdateOrderInMyWarehouse(OrderWasUpdated $event): bool
     {
-        return isProduction() && ($event->orderStatusHasBeenChanged());
+        $order = $event->order;
+
+        return isProduction() &&
+            $event->orderStatusHasBeenChanged() &&
+            !empty($order->getUuid());
     }
 }

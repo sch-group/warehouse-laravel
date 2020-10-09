@@ -28,7 +28,6 @@ trait WarehouseEntityHelper
                 $ourEntityToUpdate->saveMyWareHouseEntity($uuid, $code);
             });
         });
-        dd("kek");
     }
 
     /**
@@ -45,16 +44,5 @@ trait WarehouseEntityHelper
             ->filter(function ($remoteEntity) use ($ourEntities) {
                 return $ourEntities->keys()->contains($remoteEntity->code ?? "");
             });
-    }
-
-    /**
-     * @return \MoySklad\Entities\AbstractEntity
-     * @throws \Throwable
-     */
-    public function getOrganization(): \MoySklad\Entities\AbstractEntity
-    {
-        $organizationId = config('my_warehouse.organization_uuid');
-
-        return Organization::query($this->client)->byId($organizationId);
     }
 }

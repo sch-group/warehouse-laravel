@@ -14,7 +14,7 @@ use MoySklad\Entities\Products\Variant;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
 
-class WarehouseOrderMaker
+class OrderMaker
 {
     /**
      * @var MoySklad
@@ -24,16 +24,26 @@ class WarehouseOrderMaker
      * @var StoreDataKeeper
      */
     private $storeDataKeeper;
+    /**
+     * @var OrderPositionsBuilder
+     */
+    private $orderPositionsBuilder;
 
     /**
      * WarehouseOrderMaker constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
+     * @param OrderPositionsBuilder $orderPositionsBuilder
      */
-    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper)
+    public function __construct(
+        MoySklad $client,
+        StoreDataKeeper $storeDataKeeper,
+        OrderPositionsBuilder $orderPositionsBuilder
+    )
     {
         $this->client = $client;
         $this->storeDataKeeper = $storeDataKeeper;
+        $this->orderPositionsBuilder = $orderPositionsBuilder;
     }
 
     /**
@@ -46,10 +56,11 @@ class WarehouseOrderMaker
     {
         $remoteOrder = $this->createInstanceOfRemoteOrder($ourOrder);
         $organization = $this->storeDataKeeper->defineOrganization();
+        $store = $this->storeDataKeeper->defineStore();
         $remoteOrderStates = $this->storeDataKeeper->defineOrderStateListKeyedByUuid();
         $createdOrderList = (new EntityList($this->client, [$remoteOrder]))
-            ->each(function (CustomerOrder $remoteOrder) use ($organization, $ourOrder, $remoteOrderStates) {
-                $this->addRelationsToRemoteOrder($ourOrder, $remoteOrder, $organization, $remoteOrderStates);
+            ->each(function (CustomerOrder $remoteOrder) use ($organization, $store, $ourOrder, $remoteOrderStates) {
+                $this->addRelationsToRemoteOrder($ourOrder, $remoteOrder, $store, $organization, $remoteOrderStates);
             })->massCreate();
 
         $uuid = $createdOrderList[0]->id;
@@ -81,21 +92,22 @@ class WarehouseOrderMaker
     public function addRelationsToRemoteOrder(
         Order $ourOrder,
         CustomerOrder $remoteOrder,
+        AbstractEntity $store,
         AbstractEntity $organization,
         array $remoteStatuses
     ): CustomerOrder
     {
         $counterParty = $this->createOrFindCounterParty($ourOrder);
-        $orderPositions = $this->defineOrderPositions($ourOrder);
-        $positionList = new EntityList($this->client, $orderPositions);
+        $orderPositions = $this->orderPositionsBuilder->collectOrderPositions($ourOrder);
         $state = $remoteStatuses[$ourOrder->status->getUuid()];
 
         $remoteOrder
             ->buildCreation()
             ->addCounterparty($counterParty)
             ->addOrganization($organization)
+            ->addStore($store)
             ->addState($state)
-            ->addPositionList($positionList);
+            ->addPositionList($orderPositions);
 
         return $remoteOrder;
     }
@@ -121,27 +133,5 @@ class WarehouseOrderMaker
             'email' => $order->email,
             'phone' => $order->phone,
         ]))->create();
-    }
-
-    /**
-     * @param Order $ourOrder
-     * @return array
-     * @throws \Throwable
-     */
-    private function defineOrderPositions(Order $ourOrder): array
-    {
-        $orderPositions = [];
-        $ourOrder->orderItems->each(function (OrderItem $orderItem) use (&$orderPositions) {
-            $uuid = $orderItem->variant->getUuid();
-            $remoteVariant = Variant::query($this->client)->byId($uuid);
-            if ($remoteVariant) {
-                $remoteVariant->quantity = $orderItem->quantity;
-                $remoteVariant->reserve = $orderItem->quantity;
-                $remoteVariant->price = (round($orderItem->discounted_price / $orderItem->quantity, 2) * 100);
-                $orderPositions[] = $remoteVariant;
-            }
-        });
-
-        return $orderPositions;
     }
 }
