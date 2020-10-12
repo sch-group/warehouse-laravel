@@ -4,18 +4,18 @@
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances;
 
 
-use MoySklad\Entities\Documents\Movements\Demand;
-use MoySklad\Entities\Store;
 use MoySklad\MoySklad;
+use MoySklad\Entities\Store;
 use App\Models\Orders\Order;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Organization;
+use MoySklad\Entities\Documents\Movements\Demand;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
-use SchGroup\MyWarehouse\Repositories\OrdersWarehouseRepository;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\OrderMaker;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
+use SchGroup\MyWarehouse\Repositories\OrdersWarehouseRepository;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 
 class ReservedOrdersSynchronizer
 {
@@ -85,8 +85,11 @@ class ReservedOrdersSynchronizer
            $demand->delete();
         });
         CustomerOrder::query($this->client)->getList()->each(function (CustomerOrder $customerOrder) {
-            dump($customerOrder);
-            $customerOrder->delete();
+            try {
+                $customerOrder->delete();
+            } catch (\Exception $exception) {
+                dump($customerOrder, $exception->getCode());
+            }
         });
     }
 

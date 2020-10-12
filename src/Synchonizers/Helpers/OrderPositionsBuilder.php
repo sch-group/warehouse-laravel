@@ -42,6 +42,7 @@ class OrderPositionsBuilder
                 $orderPositions[] = $remoteVariant;
             }
         });
+
         return new EntityList($this->client, $orderPositions);
     }
 

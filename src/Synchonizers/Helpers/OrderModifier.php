@@ -23,10 +23,7 @@ class OrderModifier
      * @var OrderPositionsBuilder
      */
     private $orderPositionsBuilder;
-    /**
-     * @var ShipmentDemandManager
-     */
-    private $shipmentDemandManager;
+
 
     /**
      * OrderModifier constructor.
@@ -47,7 +44,7 @@ class OrderModifier
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \Throwable
      */
-    public function updateOrderInMyWarehouse(Order $order)
+    public function updateOrderInMyWarehouse(Order $order):void
     {
         $remoteOrder = CustomerOrder::query($this->client)->byId($order->getUuid());
         $remoteStatuses = $this->storeDataKeeper->defineOrderStateListKeyedByUuid();

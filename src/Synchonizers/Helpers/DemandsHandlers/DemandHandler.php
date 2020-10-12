@@ -9,10 +9,6 @@ use MoySklad\MoySklad;
 abstract class DemandHandler
 {
     /**
-     * @var Order
-     */
-    protected $order;
-    /**
      * @var CustomerOrder
      */
     protected $remoteOrder;
@@ -26,9 +22,8 @@ abstract class DemandHandler
      * StatusHandler constructor.
      * @param Order $order
      */
-    public function __construct(Order $order, CustomerOrder $remoteOrder)
+    public function __construct(CustomerOrder $remoteOrder)
     {
-        $this->order = $order;
         $this->remoteOrder = $remoteOrder;
         $this->client = app(MoySklad::class);
     }

@@ -3,8 +3,10 @@
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances;
 
 use MoySklad\MoySklad;
+use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
+use MoySklad\Entities\Organization;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Enter;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
@@ -56,12 +58,12 @@ class FirstEntersSynchronizer
     public function createStockBalancesByVariantsEnters(): void
     {
         $this->deleteOldEnters();
-        $store = $this->storeDataKeeper->defineOrganization();
-        $organization = $this->storeDataKeeper->defineStore();
-        $ourVariants = $this->loadOurVariants();
+        $store = $this->storeDataKeeper->defineStore();
+        $organization = $this->storeDataKeeper->defineOrganization();
+        $ourVariants = $this->warehouseRepository->getMapped(['morphMyWarehouse'])->keyBy('morphMyWarehouse.uuid');
         $sizeOfVariants = $ourVariants->count();
         $chunkCounter = 0;
-        while ($chunkCounter < $sizeOfVariants) {
+        while ($chunkCounter <= $sizeOfVariants) {
             $chunkedRemotedVariants = $this->chunkRemoteVariants($chunkCounter);
             $enterPositions = $this->buildEnterPositions($chunkedRemotedVariants, $ourVariants);
             $this->addNewEnter($organization, $store, $enterPositions);
@@ -77,17 +79,6 @@ class FirstEntersSynchronizer
         Enter::query($this->client)->getList()->each(function (Enter $enter) {
             $enter->delete();
         });
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection
-     */
-    private function loadOurVariants(): Collection
-    {
-        return $this->warehouseRepository
-            ->getMapped(['morphMyWarehouse'])
-            ->where('available_quantity', '>', 0)
-            ->keyBy('morphMyWarehouse.uuid');
     }
 
     /**
@@ -128,9 +119,12 @@ class FirstEntersSynchronizer
         if (!empty($ourVariants[$remoteVariant->id])) {
             /** @var \App\Models\Products\Variant $ourVariant */
             $ourVariant = $ourVariants[$remoteVariant->id];
-            $remoteVariant->quantity = $ourVariant->available_quantity;
-            $remoteVariant->price = $ourVariant->average_purchase_price * 100;
-            $enterPositions->push($remoteVariant);
+            $stockQuantity = $ourVariant->available_quantity + $ourVariant->storage_reserve;
+            if($stockQuantity > 0) {
+                $remoteVariant->quantity = $stockQuantity;
+                $remoteVariant->price = $ourVariant->average_purchase_price * 100;
+                $enterPositions->push($remoteVariant);
+            }
         }
     }
 
@@ -141,7 +135,7 @@ class FirstEntersSynchronizer
      * @return mixed
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      */
-    private function addNewEnter($organization, $store, EntityList $enterPositions): void
+    private function addNewEnter(Organization $organization,Store $store, EntityList $enterPositions): void
     {
         $enter = new Enter($this->client, [
             "name" => $this->defineEnterName(),
