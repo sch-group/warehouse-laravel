@@ -5,6 +5,10 @@ namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 
 
 use App\Models\Collections\Collection;
+use MoySklad\Components\FilterQuery;
+use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
+use MoySklad\Entities\Counterparty;
+use MoySklad\Entities\Documents\AbstractDocument;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
 use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
@@ -13,6 +17,7 @@ use MoySklad\Entities\AbstractEntity;
 
 class StoreDataKeeper
 {
+    const DEFAULT_COUNTER_AGENT_NAME = 'Default Supplier';
     /**
      * @var MoySklad
      */
@@ -28,10 +33,10 @@ class StoreDataKeeper
     }
 
     /**
-     * @return array
+     * @return Store|AbstractEntity
      * @throws \Throwable
      */
-    public function defineStore(): AbstractEntity
+    public function defineStore(): Store
     {
         $storeId = config('my_warehouse.store_uuid');
 
@@ -39,14 +44,33 @@ class StoreDataKeeper
     }
 
     /**
-     * @return AbstractEntity
+     * @return Organization|AbstractEntity
      * @throws \Throwable
      */
-    public function defineOrganization(): AbstractEntity
+    public function defineOrganization(): Organization
     {
         $organizationId = config('my_warehouse.organization_uuid');
 
         return Organization::query($this->client)->byId($organizationId);
+    }
+
+    /**
+     * @return Counterparty|AbstractDocument
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
+     */
+    public function defineDummyCounterAgent(): Counterparty
+    {
+        $counterParty = Counterparty::query($this->client, QuerySpecs::create(["maxResults" => 1]))
+            ->filter((new FilterQuery())->eq("name", self::DEFAULT_COUNTER_AGENT_NAME));
+
+        if (!empty($counterParty[0])) {
+            return $counterParty[0];
+        }
+
+        return (new Counterparty($this->client, [
+            'name' => self::DEFAULT_COUNTER_AGENT_NAME,
+        ]))->create();
     }
 
     /**
