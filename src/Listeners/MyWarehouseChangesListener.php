@@ -4,7 +4,6 @@
 namespace SchGroup\MyWarehouse\Listeners;
 
 
-use App\Events\WarehouseHistory\WarehouseWasIncome;
 use SchGroup\MyWarehouse\Events\MyWarehouseNeedChange;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StockChangers\StockChangersManager;
 

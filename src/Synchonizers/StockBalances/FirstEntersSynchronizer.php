@@ -11,10 +11,11 @@ use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Enter;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\EnterMaker;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 
 /**
- * Загружает текущее состояние склада available_quantity через оприходвания в моем складе
+ * Загружает текущее состояние склада available_quantity + storage_reserve через оприходвания в моем складе
  * Class FirstEntersSynchronizer
  * @package SchGroup\MyWarehouse\Synchonizers\StockBalances
  */
@@ -26,26 +27,33 @@ class FirstEntersSynchronizer
      */
     private $client;
     /**
-     * @var VariantWarehouseRepository
+     * @var EnterMaker
      */
-    private $warehouseRepository;
+    private $enterMaker;
     /**
      * @var StoreDataKeeper
      */
     private $storeDataKeeper;
+    /**
+     * @var VariantWarehouseRepository
+     */
+    private $warehouseRepository;
 
     /**
      * FirstEntersSynchronizer constructor.
      * @param MoySklad $client
+     * @param EnterMaker $enterMaker
      * @param StoreDataKeeper $storeDataKeeper
      * @param VariantWarehouseRepository $warehouseRepository
      */
     public function __construct(
         MoySklad $client,
+        EnterMaker $enterMaker,
         StoreDataKeeper $storeDataKeeper,
         VariantWarehouseRepository $warehouseRepository)
     {
         $this->client = $client;
+        $this->enterMaker = $enterMaker;
         $this->storeDataKeeper = $storeDataKeeper;
         $this->warehouseRepository = $warehouseRepository;
     }
@@ -66,7 +74,7 @@ class FirstEntersSynchronizer
         while ($chunkCounter <= $sizeOfVariants) {
             $chunkedRemotedVariants = $this->chunkRemoteVariants($chunkCounter);
             $enterPositions = $this->buildEnterPositions($chunkedRemotedVariants, $ourVariants);
-            $this->addNewEnter($organization, $store, $enterPositions);
+            $this->enterMaker->addNewEnter($organization, $store, $enterPositions);
             $chunkCounter += self::MAX_ENTER_SIZE;
         }
     }
@@ -120,42 +128,11 @@ class FirstEntersSynchronizer
             /** @var \App\Models\Products\Variant $ourVariant */
             $ourVariant = $ourVariants[$remoteVariant->id];
             $stockQuantity = $ourVariant->available_quantity + $ourVariant->storage_reserve;
-            if($stockQuantity > 0) {
+            if ($stockQuantity > 0) {
                 $remoteVariant->quantity = $stockQuantity;
                 $remoteVariant->price = $ourVariant->average_purchase_price * 100;
                 $enterPositions->push($remoteVariant);
             }
         }
     }
-
-    /**
-     * @param $organization
-     * @param $store
-     * @param EntityList $enterPositions
-     * @return mixed
-     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
-     */
-    private function addNewEnter(Organization $organization,Store $store, EntityList $enterPositions): void
-    {
-        $enter = new Enter($this->client, [
-            "name" => $this->defineEnterName(),
-        ]);
-
-        $enter
-            ->buildCreation()
-            ->addOrganization($organization)
-            ->addStore($store)
-            ->addPositionList($enterPositions)
-            ->execute();
-    }
-
-    /**
-     * @return string
-     * @throws \Exception
-     */
-    private function defineEnterName(): string
-    {
-        return (new \DateTime('now'))->format('Y-m-d H:i:s') . "_" . hash('md5', rand());
-    }
-
 }

@@ -5,12 +5,12 @@ namespace SchGroup\MyWarehouse;;
 
 use MoySklad\MoySklad;
 use Illuminate\Support\ServiceProvider;
-use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
-use SchGroup\MyWarehouse\Commands\AddReservedOrders;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
-use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
 use SchGroup\MyWarehouse\Commands\TestCreateOrder;
 use SchGroup\MyWarehouse\Commands\TestUpdateOrder;
+use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
+use SchGroup\MyWarehouse\Commands\AddReservedOrders;
+use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
 
 class MyWarehouseServiceProvider extends ServiceProvider
 {

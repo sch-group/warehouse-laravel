@@ -9,23 +9,37 @@ use MoySklad\Lists\EntityList;
 use MoySklad\Entities\Products\Variant;
 use App\Models\Warehouse\WarehouseHistory;
 use App\Models\Warehouse\WarehouseHistoryItem;
+use SchGroup\MyWarehouse\Contracts\StockChanger;
 use MoySklad\Entities\Documents\Movements\Supply;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 
-class SupplyCreator extends StockChanger
+class SupplyCreator implements StockChanger
 {
     /**
      * @var MoySklad
      */
-    protected $client;
+    private $client;
     /**
      * @var StoreDataKeeper
      */
-    protected $storeDataKeeper;
+    private $storeDataKeeper;
 
+    /**
+     * StockChanger constructor.
+     * @param MoySklad $client
+     * @param StoreDataKeeper $storeDataKeeper
+     */
+    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper)
+    {
+        $this->client = $client;
+        $this->storeDataKeeper = $storeDataKeeper;
+    }
 
     /**
      * @param WarehouseHistory $warehouseHistory
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
+     * @throws \Throwable
      */
     public function createBy(WarehouseHistory $warehouseHistory): void
     {

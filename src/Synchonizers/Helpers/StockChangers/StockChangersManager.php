@@ -3,6 +3,7 @@
 namespace SchGroup\MyWarehouse\Synchonizers\Helpers\StockChangers;
 
 use App\Models\Warehouse\WarehouseHistory;
+use SchGroup\MyWarehouse\Contracts\StockChanger;
 
 class StockChangersManager
 {
