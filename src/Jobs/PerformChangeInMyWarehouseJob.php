@@ -5,11 +5,11 @@ namespace SchGroup\MyWarehouse\Jobs;
 
 
 use App\Models\Orders\Order;
-use App\Models\Warehouse\WarehouseHistory;
 use Illuminate\Bus\Queueable;
+use App\Models\Warehouse\WarehouseHistory;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\Income\IncomingManager;
+use SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers\StockChangersManager;
 
 class PerformChangeInMyWarehouseJob implements ShouldQueue
 {
@@ -34,10 +34,10 @@ class PerformChangeInMyWarehouseJob implements ShouldQueue
     }
 
     /**
-     * @param IncomingManager $incomingManager
+     * @param StockChangersManager $stockChangersManager
      */
-    public function handle(IncomingManager $incomingManager)
+    public function handle(StockChangersManager $stockChangersManager)
     {
-        $incomingManager->synchronize($this->warehouseHistory);
+        $stockChangersManager->synchronize($this->warehouseHistory);
     }
 }

@@ -33,7 +33,7 @@ class DemandCreator extends DemandHandler
         $organization = $this->remoteOrder->relations->find(Organization::class);
         $store = $this->remoteOrder->relations->find(Store::class);
         $positions = $this->buildPositionsFromRemoteOrder();
-        $demand = new Demand($this->client, ['name' => (string)$this->order->order_number]);
+        $demand = new Demand($this->client, ['name' => (string)$this->remoteOrder->code]);
 
         $demand->buildCreation()
             ->addStore($store)

@@ -6,7 +6,6 @@ namespace SchGroup\MyWarehouse\Commands;
 use Illuminate\Console\Command;
 use App\Repositories\Order\OrderRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\OrderModifier;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseOrderModifier;
 
 
 class TestUpdateOrder extends Command

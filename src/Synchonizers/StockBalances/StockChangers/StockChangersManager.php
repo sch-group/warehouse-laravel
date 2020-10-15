@@ -1,6 +1,6 @@
 <?php
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\StockChangers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers;
 
 use App\Models\Warehouse\WarehouseHistory;
 use SchGroup\MyWarehouse\Contracts\StockChanger;

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\StockChangers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers;
 
 
 use MoySklad\MoySklad;

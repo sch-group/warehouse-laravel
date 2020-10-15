@@ -5,7 +5,7 @@ namespace SchGroup\MyWarehouse\Listeners;
 
 
 use SchGroup\MyWarehouse\Events\MyWarehouseNeedChange;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\StockChangers\StockChangersManager;
+use SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers\StockChangersManager;
 
 class MyWarehouseChangesListener
 {

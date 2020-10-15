@@ -68,6 +68,6 @@ class ShipmentDemandManager
         }
         $handlerClassName = $this->statusHandlers()[$this->order->status->code];
 
-        return new $handlerClassName($this->order, $this->remoteOrder);
+        return new $handlerClassName($this->remoteOrder);
     }
 }
