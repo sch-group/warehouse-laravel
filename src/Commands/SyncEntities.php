@@ -4,9 +4,10 @@
 namespace SchGroup\MyWarehouse\Commands;
 
 use Illuminate\Console\Command;
-use SchGroup\MyWarehouse\Synchonizers\Entities\OrderStatusSynchronizer;
+use SchGroup\MyWarehouse\Synchonizers\Entities\BonusesSynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\ProductsSynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\VariantsSynchronizer;
+use SchGroup\MyWarehouse\Synchonizers\Entities\OrderStatusSynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\BrandsEntitySynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Entities\AbstractEntitySynchronizer;
 
@@ -16,7 +17,8 @@ class SyncEntities extends Command
         'brand' => BrandsEntitySynchronizer::class,
         'product' => ProductsSynchronizer::class,
         'variant' => VariantsSynchronizer::class,
-        'order_status' => OrderStatusSynchronizer::class
+        'order_status' => OrderStatusSynchronizer::class,
+        'bonus' => BonusesSynchronizer::class,
     ];
     /**
      * The name and signature of the console command.

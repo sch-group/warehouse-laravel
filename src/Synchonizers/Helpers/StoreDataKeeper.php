@@ -4,20 +4,24 @@
 namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 
 
-use App\Models\Collections\Collection;
-use MoySklad\Components\FilterQuery;
-use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
-use MoySklad\Entities\Counterparty;
-use MoySklad\Entities\Documents\AbstractDocument;
-use MoySklad\Entities\Documents\Orders\CustomerOrder;
 use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
+use MoySklad\Entities\Counterparty;
 use MoySklad\Entities\Organization;
+use MoySklad\Components\FilterQuery;
 use MoySklad\Entities\AbstractEntity;
+use MoySklad\Entities\Folders\ProductFolder;
+use MoySklad\Entities\Documents\AbstractDocument;
+use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
+use MoySklad\Entities\Documents\Orders\CustomerOrder;
 
 class StoreDataKeeper
 {
     const DEFAULT_COUNTER_AGENT_NAME = 'Default Supplier';
+
+    const DEFAULT_BONUSES_PRODUCT_FOLDER_CODE = 'bonuses';
+
+    const DEFAULT_BONUSES_PRODUCT_FOLDER_NAME = '000_Bonuses';
     /**
      * @var MoySklad
      */
@@ -52,6 +56,26 @@ class StoreDataKeeper
         $organizationId = config('my_warehouse.organization_uuid');
 
         return Organization::query($this->client)->byId($organizationId);
+    }
+
+    /**
+     * @return AbstractEntity|AbstractDocument|ProductFolder
+     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
+     */
+    public function defineProductFolderForBonuses(): ProductFolder
+    {
+        $bonusFolder = ProductFolder::query($this->client, QuerySpecs::create(["maxResults" => 1]))
+            ->filter((new FilterQuery())->eq("code", self::DEFAULT_BONUSES_PRODUCT_FOLDER_CODE));
+
+        if (!empty($bonusFolder[0])) {
+            return $bonusFolder[0];
+        }
+
+        return (new ProductFolder($this->client, [
+            'name' => self::DEFAULT_BONUSES_PRODUCT_FOLDER_NAME,
+            'code' => self::DEFAULT_BONUSES_PRODUCT_FOLDER_CODE,
+        ]))->create();
     }
 
     /**
