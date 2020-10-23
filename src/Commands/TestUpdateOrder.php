@@ -22,7 +22,7 @@ class TestUpdateOrder extends Command
      *
      * @var string
      */
-    protected $description = 'Добавляет тестовый заказ';
+    protected $description = 'Обновлет тестовый заказ';
 
     /**
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
@@ -32,7 +32,7 @@ class TestUpdateOrder extends Command
     {
         /** @var OrderRepository $orderRepository */
         $orderRepository = app(OrderRepository::class);
-        $order = $orderRepository->getById(31581);
+        $order = $orderRepository->getById(31576);
         /** @var OrderModifier $warehouseOrderModifier */
         $warehouseOrderModifier = app(OrderModifier::class);
         $warehouseOrderModifier->updateOrderInMyWarehouse($order);

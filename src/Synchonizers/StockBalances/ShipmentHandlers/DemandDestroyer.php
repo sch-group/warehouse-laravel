@@ -1,6 +1,6 @@
 <?php
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\DemandsHandlers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
 use MoySklad\MoySklad;
 use App\Models\Orders\Order;

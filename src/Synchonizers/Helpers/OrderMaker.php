@@ -97,7 +97,7 @@ class OrderMaker
         array $remoteStatuses
     ): CustomerOrder
     {
-        $counterParty = $this->createOrFindCounterAgeny($ourOrder);
+        $counterParty = $this->createOrFindCounterAgent($ourOrder);
         $orderPositions = $this->orderPositionsBuilder->collectOrderPositions($ourOrder);
         $state = $remoteStatuses[$ourOrder->status->getUuid()];
 
@@ -118,7 +118,7 @@ class OrderMaker
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      */
-    private function createOrFindCounterAgeny(Order $order): Counterparty
+    private function createOrFindCounterAgent(Order $order): Counterparty
     {
         $counterParty = Counterparty::query($this->client, QuerySpecs::create(["maxResults" => 1]))
             ->filter((new FilterQuery())->eq("code", (string)$order->order_number));

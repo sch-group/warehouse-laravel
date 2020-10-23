@@ -1,25 +1,25 @@
 <?php
 
-namespace SchGroup\MyWarehouse\Synchonizers\StockBalances;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\FirstEnters;
 
 use MoySklad\MoySklad;
-use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
-use MoySklad\Entities\Organization;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Enter;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
-use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
+use SchGroup\MyWarehouse\Contracts\FirstEntersCreator;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\EnterMaker;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
+use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
+use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 /**
  * Загружает текущее состояние склада available_quantity + storage_reserve через оприходвания в моем складе
  * Class FirstEntersSynchronizer
  * @package SchGroup\MyWarehouse\Synchonizers\StockBalances
  */
-class FirstEntersSynchronizer
+class FirstEntersVariantsCreator implements FirstEntersCreator
 {
     const MAX_ENTER_SIZE = 100;
     /**
@@ -30,6 +30,11 @@ class FirstEntersSynchronizer
      * @var EnterMaker
      */
     private $enterMaker;
+
+    /**
+     * @var VariantLinker
+     */
+    private $variantLinker;
     /**
      * @var StoreDataKeeper
      */
@@ -56,6 +61,7 @@ class FirstEntersSynchronizer
         $this->enterMaker = $enterMaker;
         $this->storeDataKeeper = $storeDataKeeper;
         $this->warehouseRepository = $warehouseRepository;
+        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
@@ -63,7 +69,7 @@ class FirstEntersSynchronizer
      * @throws \MoySklad\Exceptions\EntityHasNoIdException
      * @throws \Throwable
      */
-    public function createStockBalancesByVariantsEnters(): void
+    public function createFirstStockBalances(): void
     {
         $this->deleteOldEnters();
         $store = $this->storeDataKeeper->defineStore();
@@ -130,7 +136,7 @@ class FirstEntersSynchronizer
             $stockQuantity = $ourVariant->available_quantity + $ourVariant->storage_reserve;
             if ($stockQuantity > 0) {
                 $remoteVariant->quantity = $stockQuantity;
-                $remoteVariant->price = $ourVariant->average_purchase_price * 100;
+                $remoteVariant->price = $this->variantLinker->defineBuyPrice($ourVariant)['value'];
                 $enterPositions->push($remoteVariant);
             }
         }

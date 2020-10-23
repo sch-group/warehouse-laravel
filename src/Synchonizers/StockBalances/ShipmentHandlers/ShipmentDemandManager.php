@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\DemandsHandlers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
 use App\Models\Orders\Order;
 use App\Models\Orders\Status;

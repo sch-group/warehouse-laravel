@@ -7,7 +7,7 @@ namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 use MoySklad\MoySklad;
 use App\Models\Orders\Order;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\DemandsHandlers\ShipmentDemandManager;
+use SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers\ShipmentDemandManager;
 
 class OrderModifier
 {

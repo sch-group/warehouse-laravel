@@ -20,7 +20,7 @@ class AddReservedOrders extends Command
      *
      * @var string
      */
-    protected $description = 'Добавляет заказы которые находятся в резерве в мой склад';
+    protected $description = 'Добавляет заказы, находящиеся в резерве в мой склад';
 
     /**
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException

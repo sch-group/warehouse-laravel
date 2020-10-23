@@ -14,11 +14,11 @@ use SchGroup\MyWarehouse\Synchonizers\Entities\AbstractEntitySynchronizer;
 class SyncEntities extends Command
 {
     const ENTITY_SYNCHRONIZERS = [
-        'brand' => BrandsEntitySynchronizer::class,
+        'bonus' => BonusesSynchronizer::class,
         'product' => ProductsSynchronizer::class,
         'variant' => VariantsSynchronizer::class,
+        'brand' => BrandsEntitySynchronizer::class,
         'order_status' => OrderStatusSynchronizer::class,
-        'bonus' => BonusesSynchronizer::class,
     ];
     /**
      * The name and signature of the console command.
@@ -32,7 +32,7 @@ class SyncEntities extends Command
      *
      * @var string
      */
-    protected $description = 'Синхронизирует наши бренды/упаковки/товары c системой Мой склад';
+    protected $description = 'Синхронизирует наши бренды/упаковки/товары/бонусы c системой Мой склад';
 
     /**
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException

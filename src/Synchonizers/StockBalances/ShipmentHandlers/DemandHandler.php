@@ -1,6 +1,6 @@
 <?php
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\DemandsHandlers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
 use App\Models\Orders\Order;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
@@ -18,9 +18,10 @@ abstract class DemandHandler
      */
     protected $client;
 
+
     /**
-     * StatusHandler constructor.
-     * @param Order $order
+     * DemandHandler constructor.
+     * @param CustomerOrder $remoteOrder
      */
     public function __construct(CustomerOrder $remoteOrder)
     {

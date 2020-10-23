@@ -1,7 +1,8 @@
 <?php
 
-namespace SchGroup\MyWarehouse\Synchonizers\Helpers\DemandsHandlers;
+namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
+use MoySklad\Entities\Products\Product;
 use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
@@ -57,12 +58,24 @@ class DemandCreator extends DemandHandler
         $collectedPositions = [];
         $this->remoteOrder->relationListQuery('positions')->getList()
             ->each(function (CustomerOrderPosition $customerOrderPosition) use (&$collectedPositions) {
-                $remoteVariant = $customerOrderPosition->relations->find(Variant::class)->fresh();
-                $remoteVariant->quantity = $customerOrderPosition->quantity;
-                $remoteVariant->price = $customerOrderPosition->price;
-                $collectedPositions[] = $remoteVariant;
+                $remotePosition = $this->defineRemoteItemOrBonusPosition($customerOrderPosition)->fresh();
+                $remotePosition->quantity = $customerOrderPosition->quantity;
+                $remotePosition->price = $customerOrderPosition->price;
+                $collectedPositions[] = $remotePosition;
             });
 
         return new EntityList($this->client, $collectedPositions);
+    }
+
+    /**
+     * @param CustomerOrderPosition $customerOrderPosition
+     * @return \MoySklad\Entities\AbstractEntity
+     * @throws \MoySklad\Exceptions\Relations\RelationDoesNotExistException
+     * @throws \MoySklad\Exceptions\Relations\RelationIsList
+     */
+    private function defineRemoteItemOrBonusPosition(CustomerOrderPosition $customerOrderPosition): \MoySklad\Entities\AbstractEntity
+    {
+        return $customerOrderPosition->relations->find(Variant::class) ??
+            $customerOrderPosition->relations->find(Product::class);
     }
 }

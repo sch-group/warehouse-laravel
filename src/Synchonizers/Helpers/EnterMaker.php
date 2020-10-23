@@ -34,7 +34,7 @@ class EnterMaker
      * @return mixed
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      */
-    public function addNewEnter(Organization $organization,Store $store, EntityList $enterPositions, string $enterName = null): void
+    public function addNewEnter(Organization $organization,Store $store, EntityList $enterPositions, string $enterName = null): Enter
     {
         $enter = new Enter($this->client, [
             "name" => $enterName ?? $this->defineEnterName(),
@@ -46,6 +46,8 @@ class EnterMaker
             ->addStore($store)
             ->addPositionList($enterPositions)
             ->execute();
+
+        return $enter;
     }
 
     /**
