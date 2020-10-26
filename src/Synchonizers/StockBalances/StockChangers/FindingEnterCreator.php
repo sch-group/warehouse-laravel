@@ -7,11 +7,12 @@ namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers;
 use MoySklad\MoySklad;
 use App\Models\Warehouse\WarehouseHistory;
 use SchGroup\MyWarehouse\Contracts\StockChanger;
-use MoySklad\Entities\Documents\Movements\Supply;
+use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\EnterMaker;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 use SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers\PositionsBuilders\PositionsFactory;
 
-class IncomingSupplyCreator implements StockChanger
+class FindingEnterCreator implements StockChanger
 {
     /**
      * @var MoySklad
@@ -21,38 +22,37 @@ class IncomingSupplyCreator implements StockChanger
      * @var StoreDataKeeper
      */
     private $storeDataKeeper;
+    /**
+     * @var EnterMaker
+     */
+    private $enterMaker;
 
     /**
      * StockChanger constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
+     * @param EnterMaker $enterMaker
      */
-    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper)
+    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper, EnterMaker $enterMaker)
     {
         $this->client = $client;
+        $this->enterMaker = $enterMaker;
         $this->storeDataKeeper = $storeDataKeeper;
     }
 
     /**
-     * @param \App\Models\Warehouse\Bonus\WarehouseBonusHistory|WarehouseHistory $warehouseHistory
+     * @param WarehouseHistory|WarehouseBonusHistory $warehouseHistory
      * @param string $remoteChangeName
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
-     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
     public function createBy($warehouseHistory, string $remoteChangeName): void
     {
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
-        $counterAgent = $this->storeDataKeeper->defineDummyCounterAgent();
-        $supply = new Supply($this->client, ['name' => $remoteChangeName]);
-        $positionsBuilder = PositionsFactory::defineIncomingPositionsBuilder($warehouseHistory);
-        $supplyPositions = $positionsBuilder->buildPositionsBy($warehouseHistory);
-        $supply->buildCreation()
-            ->addStore($store)
-            ->addOrganization($organization)
-            ->addCounterparty($counterAgent)
-            ->addPositionList($supplyPositions)
-            ->execute();
+        $positionsBuilder = PositionsFactory::defineInventoryPositionsBuilder($warehouseHistory);
+        $enterPositions = $positionsBuilder->buildPositionsBy($warehouseHistory);
+        $this->enterMaker->addNewEnter($organization, $store, $enterPositions, $remoteChangeName);
     }
+
 }

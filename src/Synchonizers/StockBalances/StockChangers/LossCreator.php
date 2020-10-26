@@ -5,14 +5,11 @@ namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers;
 
 
 use MoySklad\MoySklad;
-use MoySklad\Lists\EntityList;
-use MoySklad\Entities\Products\Variant;
 use App\Models\Warehouse\WarehouseHistory;
-use App\Models\Warehouse\WarehouseHistoryItem;
 use MoySklad\Entities\Documents\Movements\Loss;
 use SchGroup\MyWarehouse\Contracts\StockChanger;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
-use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
+use SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers\PositionsBuilders\PositionsFactory;
 
 class LossCreator implements StockChanger
 {
@@ -26,10 +23,6 @@ class LossCreator implements StockChanger
     private $storeDataKeeper;
 
     /**
-     * @var VariantLinker
-     */
-    private $variantLinker;
-    /**
      * StockChanger constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
@@ -38,20 +31,22 @@ class LossCreator implements StockChanger
     {
         $this->client = $client;
         $this->storeDataKeeper = $storeDataKeeper;
-        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
      * @param \App\Models\Warehouse\Bonus\WarehouseBonusHistory|WarehouseHistory $warehouseHistory
+     * @param string $remoteChangeName
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
      * @throws \Throwable
      */
-    public function createBy($warehouseHistory): void
+    public function createBy($warehouseHistory, string $remoteChangeName): void
     {
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
-        $lossPositions = $this->buildLossPositions($warehouseHistory);
-        $loss = new Loss($this->client);
+        $positionsBuilder = PositionsFactory::defineLossPositionsBuilder($warehouseHistory);
+        $lossPositions = $positionsBuilder->buildPositionsBy($warehouseHistory);
+
+        $loss = new Loss($this->client, ['name' => $remoteChangeName]);
         $loss->buildCreation()
             ->addOrganization($organization)
             ->addStore($store)
@@ -59,23 +54,4 @@ class LossCreator implements StockChanger
             ->execute();
     }
 
-    /**
-     * @param WarehouseHistory $warehouseHistory
-     * @return array
-     * @throws \Throwable
-     */
-    private function buildLossPositions(WarehouseHistory $warehouseHistory): EntityList
-    {
-        $lossPositions = [];
-        $warehouseHistory->items->each(function (WarehouseHistoryItem $historyItem) use (&$lossPositions) {
-            $uuid = $historyItem->variant->getUuid();
-            $remoteVariant = Variant::query($this->client)->byId($uuid);
-            $remoteVariant->quantity = $historyItem->quantity_old - $historyItem->quantity_new;
-            $remoteVariant->price = $this->variantLinker->defineBuyPrice($historyItem->variant)['value'];
-            $remoteVariant->reason = $historyItem->comment ?? "";
-            $lossPositions[] = $remoteVariant;
-        });
-
-        return new EntityList($this->client, $lossPositions);
-    }
 }

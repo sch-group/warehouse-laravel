@@ -2,9 +2,8 @@
 
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
-use App\Models\Orders\Order;
-use MoySklad\Entities\Documents\Orders\CustomerOrder;
 use MoySklad\MoySklad;
+use MoySklad\Entities\Documents\Orders\CustomerOrder;
 
 abstract class DemandHandler
 {

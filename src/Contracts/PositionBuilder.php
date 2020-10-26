@@ -4,14 +4,15 @@
 namespace SchGroup\MyWarehouse\Contracts;
 
 
+use MoySklad\Lists\EntityList;
 use App\Models\Warehouse\WarehouseHistory;
 use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
 
-interface StockChanger
+interface PositionBuilder
 {
     /**
      * @param WarehouseHistory|WarehouseBonusHistory $warehouseHistory
-     * @param string $remoteChangeName
+     * @return mixed
      */
-    public function createBy($warehouseHistory, string $remoteChangeName): void;
+    public function buildPositionsBy($warehouseHistory) : EntityList;
 }

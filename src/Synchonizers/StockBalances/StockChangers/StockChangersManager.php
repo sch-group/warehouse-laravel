@@ -8,19 +8,27 @@ use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
 
 class StockChangersManager
 {
-    const INCOMING_CREATORS = [
+    const STOCK_CHANGE_CREATORS = [
        WarehouseHistory::ACTION_LOSS => LossCreator::class,
-       WarehouseHistory::ACTION_FIND => InventoryEnterCreator::class,
-       WarehouseHistory::ACTION_INVENTORY => InventoryEnterCreator::class,
+       WarehouseHistory::ACTION_FIND => FindingEnterCreator::class,
+       WarehouseHistory::ACTION_INVENTORY => FindingEnterCreator::class,
        WarehouseHistory::ACTION_INCOMING => IncomingSupplyCreator::class,
     ];
+
+    const CHANGER_NAMES = [
+        WarehouseHistory::class => "variants",
+        WarehouseBonusHistory::class => "bonuses",
+    ];
+
     /**
      * @param WarehouseHistory|WarehouseBonusHistory $history
      */
     public function synchronize($history): void
     {
         $stockChanger = $this->defineStockChanger($history);
-        $stockChanger->createBy($history);
+        $remoteChangeName = $this->defineRemoteChangeName($history);
+
+        $stockChanger->createBy($history, $remoteChangeName);
     }
 
     /**
@@ -29,6 +37,15 @@ class StockChangersManager
      */
     private function defineStockChanger($history): StockChanger
     {
-        return app(self::INCOMING_CREATORS[$history->action]);
+        return app(self::STOCK_CHANGE_CREATORS[$history->action]);
+    }
+
+    /**
+     * @param WarehouseHistory|WarehouseBonusHistory $history
+     * @return string
+     */
+    private function defineRemoteChangeName($history): string
+    {
+        return $history->id . "_" . $history->action . "_" . self::CHANGER_NAMES[get_class($history)];
     }
 }

@@ -3,6 +3,7 @@
 namespace SchGroup\MyWarehouse\Events;
 
 use App\Models\Warehouse\WarehouseHistory;
+use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
 
 class MyWarehouseNeedChange
 {
@@ -13,9 +14,9 @@ class MyWarehouseNeedChange
 
     /**
      * MyWarehouseChanger constructor.
-     * @param WarehouseHistory $warehouseHistory
+     * @param WarehouseHistory|WarehouseBonusHistory $warehouseHistory
      */
-    public function __construct(WarehouseHistory $warehouseHistory)
+    public function __construct($warehouseHistory)
     {
         $this->warehouseHistory = $warehouseHistory;
     }
