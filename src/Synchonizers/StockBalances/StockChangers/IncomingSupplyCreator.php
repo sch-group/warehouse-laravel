@@ -9,12 +9,11 @@ use MoySklad\Lists\EntityList;
 use MoySklad\Entities\Products\Variant;
 use App\Models\Warehouse\WarehouseHistory;
 use App\Models\Warehouse\WarehouseHistoryItem;
-use MoySklad\Entities\Documents\Movements\Loss;
 use SchGroup\MyWarehouse\Contracts\StockChanger;
+use MoySklad\Entities\Documents\Movements\Supply;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
-use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
-class LossCreator implements StockChanger
+class IncomingSupplyCreator implements StockChanger
 {
     /**
      * @var MoySklad
@@ -26,10 +25,6 @@ class LossCreator implements StockChanger
     private $storeDataKeeper;
 
     /**
-     * @var VariantLinker
-     */
-    private $variantLinker;
-    /**
      * StockChanger constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
@@ -38,44 +33,45 @@ class LossCreator implements StockChanger
     {
         $this->client = $client;
         $this->storeDataKeeper = $storeDataKeeper;
-        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
      * @param \App\Models\Warehouse\Bonus\WarehouseBonusHistory|WarehouseHistory $warehouseHistory
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
+     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
     public function createBy($warehouseHistory): void
     {
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
-        $lossPositions = $this->buildLossPositions($warehouseHistory);
-        $loss = new Loss($this->client);
-        $loss->buildCreation()
-            ->addOrganization($organization)
+        $counterAgent = $this->storeDataKeeper->defineDummyCounterAgent();
+        $supply = new Supply($this->client, ['name' => (string)$warehouseHistory->id]);
+        $supplyPositions = $this->defineSupplyPositions($warehouseHistory);
+        $supply->buildCreation()
             ->addStore($store)
-            ->addPositionList($lossPositions)
+            ->addOrganization($organization)
+            ->addCounterparty($counterAgent)
+            ->addPositionList($supplyPositions)
             ->execute();
     }
 
     /**
      * @param WarehouseHistory $warehouseHistory
-     * @return array
+     * @return EntityList
      * @throws \Throwable
      */
-    private function buildLossPositions(WarehouseHistory $warehouseHistory): EntityList
+    private function defineSupplyPositions(WarehouseHistory $warehouseHistory): EntityList
     {
-        $lossPositions = [];
-        $warehouseHistory->items->each(function (WarehouseHistoryItem $historyItem) use (&$lossPositions) {
+        $supplyPositions = [];
+        $warehouseHistory->items->each(function (WarehouseHistoryItem $historyItem) use (&$supplyPositions) {
             $uuid = $historyItem->variant->getUuid();
             $remoteVariant = Variant::query($this->client)->byId($uuid);
-            $remoteVariant->quantity = $historyItem->quantity_old - $historyItem->quantity_new;
-            $remoteVariant->price = $this->variantLinker->defineBuyPrice($historyItem->variant)['value'];
-            $remoteVariant->reason = $historyItem->comment ?? "";
-            $lossPositions[] = $remoteVariant;
+            $remoteVariant->quantity = $historyItem->quantity_new - $historyItem->quantity_old;
+            $remoteVariant->price = ($historyItem->purchase_price / $remoteVariant->quantity) * 100;
+            $supplyPositions[] = $remoteVariant;
         });
 
-        return new EntityList($this->client, $lossPositions);
+        return new EntityList($this->client, $supplyPositions);
     }
 }

@@ -5,8 +5,12 @@ namespace SchGroup\MyWarehouse\Contracts;
 
 
 use App\Models\Warehouse\WarehouseHistory;
+use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
 
 interface StockChanger
 {
-    public function createBy(WarehouseHistory $warehouseHistory): void;
+    /**
+     * @param WarehouseHistory|WarehouseBonusHistory $warehouseHistory
+     */
+    public function createBy($warehouseHistory): void;
 }

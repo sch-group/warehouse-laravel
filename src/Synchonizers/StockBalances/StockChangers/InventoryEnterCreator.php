@@ -10,10 +10,11 @@ use MoySklad\Entities\Products\Variant;
 use App\Models\Warehouse\WarehouseHistory;
 use App\Models\Warehouse\WarehouseHistoryItem;
 use SchGroup\MyWarehouse\Contracts\StockChanger;
-use MoySklad\Entities\Documents\Movements\Supply;
+use SchGroup\MyWarehouse\Synchonizers\Helpers\EnterMaker;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
+use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
-class SupplyCreator implements StockChanger
+class InventoryEnterCreator implements StockChanger
 {
     /**
      * @var MoySklad
@@ -23,37 +24,41 @@ class SupplyCreator implements StockChanger
      * @var StoreDataKeeper
      */
     private $storeDataKeeper;
+    /**
+     * @var EnterMaker
+     */
+    private $enterMaker;
+
+    /**
+     * @var VariantLinker
+     */
+    private $variantLinker;
 
     /**
      * StockChanger constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
+     * @param EnterMaker $enterMaker
      */
-    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper)
+    public function __construct(MoySklad $client, StoreDataKeeper $storeDataKeeper, EnterMaker $enterMaker)
     {
         $this->client = $client;
+        $this->enterMaker = $enterMaker;
         $this->storeDataKeeper = $storeDataKeeper;
+        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
      * @param WarehouseHistory $warehouseHistory
-     * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
-     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
-    public function createBy(WarehouseHistory $warehouseHistory): void
+    public function createBy($warehouseHistory): void
     {
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
-        $counterAgent = $this->storeDataKeeper->defineDummyCounterAgent();
-        $supply = new Supply($this->client, ['name' => (string)$warehouseHistory->id]);
-        $supplyPositions = $this->defineSupplyPositions($warehouseHistory);
-        $supply->buildCreation()
-            ->addStore($store)
-            ->addOrganization($organization)
-            ->addCounterparty($counterAgent)
-            ->addPositionList($supplyPositions)
-            ->execute();
+        $enterPositions = $this->buildEntersPositionsBy($warehouseHistory);
+        $enterName = $warehouseHistory->id . "_" . $warehouseHistory->action;
+        $this->enterMaker->addNewEnter($organization, $store, $enterPositions, $enterName);
     }
 
     /**
@@ -61,17 +66,17 @@ class SupplyCreator implements StockChanger
      * @return EntityList
      * @throws \Throwable
      */
-    private function defineSupplyPositions(WarehouseHistory $warehouseHistory): EntityList
+    private function buildEntersPositionsBy(WarehouseHistory $warehouseHistory): EntityList
     {
-        $supplyPositions = [];
-        $warehouseHistory->items->each(function (WarehouseHistoryItem $historyItem) use (&$supplyPositions) {
+        $enterPositions = [];
+        $warehouseHistory->items->each(function (WarehouseHistoryItem $historyItem) use (&$enterPositions) {
             $uuid = $historyItem->variant->getUuid();
             $remoteVariant = Variant::query($this->client)->byId($uuid);
             $remoteVariant->quantity = $historyItem->quantity_new - $historyItem->quantity_old;
-            $remoteVariant->price = ($historyItem->purchase_price / $remoteVariant->quantity) * 100;
-            $supplyPositions[] = $remoteVariant;
+            $remoteVariant->price = $this->variantLinker->defineBuyPrice($historyItem->variant)['value'];
+            $enterPositions[] = $remoteVariant;
         });
 
-        return new EntityList($this->client, $supplyPositions);
+        return new EntityList($this->client, $enterPositions);
     }
 }
