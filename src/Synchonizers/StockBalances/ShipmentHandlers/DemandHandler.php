@@ -3,6 +3,7 @@
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
 use MoySklad\MoySklad;
+use SchGroup\MyWarehouse\Loggers\OrderChangedLogger;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
 
 abstract class DemandHandler
@@ -17,7 +18,10 @@ abstract class DemandHandler
      */
     protected $client;
 
-
+    /**
+     * @var OrderChangedLogger
+     */
+    protected $logger;
     /**
      * DemandHandler constructor.
      * @param CustomerOrder $remoteOrder
@@ -26,6 +30,7 @@ abstract class DemandHandler
     {
         $this->remoteOrder = $remoteOrder;
         $this->client = app(MoySklad::class);
+        $this->logger = app(OrderChangedLogger::class);
     }
 
 

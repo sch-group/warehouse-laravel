@@ -5,6 +5,7 @@ namespace SchGroup\MyWarehouse\Listeners;
 
 
 use SchGroup\MyWarehouse\Events\MyWarehouseNeedChange;
+use SchGroup\MyWarehouse\Jobs\PerformChangeInMyWarehouseJob;
 use SchGroup\MyWarehouse\Synchonizers\StockBalances\StockChangers\StockChangersManager;
 
 class MyWarehouseChangesListener
@@ -28,6 +29,8 @@ class MyWarehouseChangesListener
      */
     public function handle(MyWarehouseNeedChange $event)
     {
-        $this->stockChangersManager->synchronize($event->warehouseHistory);
+        if(isProduction()) {
+            PerformChangeInMyWarehouseJob::dispatch($event->warehouseHistory);
+        }
     }
 }

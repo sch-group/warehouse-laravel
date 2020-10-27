@@ -17,6 +17,11 @@ use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 use SchGroup\MyWarehouse\Repositories\OrdersWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 
+/**
+ * Доабвляет заказы которые в резерве
+ * Class ReservedOrdersSynchronizer
+ * @package SchGroup\MyWarehouse\Synchonizers\StockBalances
+ */
 class ReservedOrdersSynchronizer
 {
     use WarehouseEntityHelper;

@@ -2,17 +2,23 @@
 
 namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers;
 
-use MoySklad\Entities\Products\Product;
 use MoySklad\MoySklad;
 use MoySklad\Entities\Store;
 use MoySklad\Lists\EntityList;
 use MoySklad\Entities\Counterparty;
 use MoySklad\Entities\Organization;
+use MoySklad\Entities\Products\Product;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Demand;
+use SchGroup\MyWarehouse\Loggers\OrderChangedLogger;
 use MoySklad\Entities\Documents\Orders\CustomerOrder;
 use MoySklad\Entities\Documents\Positions\CustomerOrderPosition;
 
+/**
+ * Создает отгрузку
+ * Class DemandCreator
+ * @package SchGroup\MyWarehouse\Synchonizers\StockBalances\ShipmentHandlers
+ */
 class DemandCreator extends DemandHandler
 {
     /**
@@ -26,14 +32,21 @@ class DemandCreator extends DemandHandler
     protected $client;
 
     /**
+     * @var OrderChangedLogger
+     */
+    protected $logger;
+
+    /**
      *
      */
     public function handle(): void
     {
+        $this->logger->info("Order {$this->remoteOrder->name} has been changed to dispatched, lets create demand");
         $counterParty = $this->remoteOrder->relations->find(Counterparty::class);
         $organization = $this->remoteOrder->relations->find(Organization::class);
         $store = $this->remoteOrder->relations->find(Store::class);
         $positions = $this->buildPositionsFromRemoteOrder();
+        $this->logger->info("Order {$this->remoteOrder->name} demand positions: " . $positions->toJson(0));
         $demand = new Demand($this->client, ['name' => (string)$this->remoteOrder->code]);
 
         $demand->buildCreation()
@@ -43,6 +56,7 @@ class DemandCreator extends DemandHandler
             ->addCustomerOrder($this->remoteOrder)
             ->addPositionList($positions)
             ->execute();
+        $this->logger->info("Order {$this->remoteOrder->name} demand created : " . $demand->name);
     }
 
     /**

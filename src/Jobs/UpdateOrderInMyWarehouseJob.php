@@ -6,7 +6,7 @@ use App\Models\Orders\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use SchGroup\MyWarehouse\Synchonizers\Helpers\OrderMaker;
+use SchGroup\MyWarehouse\Loggers\OrderChangedLogger;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\OrderModifier;
 
 class UpdateOrderInMyWarehouseJob implements ShouldQueue
@@ -29,12 +29,22 @@ class UpdateOrderInMyWarehouseJob implements ShouldQueue
 
     /**
      * @param OrderModifier $orderModifier
+     * @param OrderChangedLogger $logger
      * @throws \MoySklad\Exceptions\EntityCantBeMutatedException
-     * @throws \MoySklad\Exceptions\IncompleteCreationFieldsException
      * @throws \Throwable
      */
-    public function handle(OrderModifier $orderModifier)
+    public function handle(OrderModifier $orderModifier, OrderChangedLogger $logger)
     {
-        $orderModifier->updateOrderInMyWarehouse($this->order);
+        try {
+
+            $orderModifier->updateOrderInMyWarehouse($this->order);
+
+        } catch (\Exception $exception) {
+            $logger->error(
+                "Update order: {$this->order->order_number} CODE: " . $exception->getCode() . " "
+                . $exception->getMessage() . $exception->getTraceAsString()
+            );
+            throw $exception;
+        }
     }
 }
