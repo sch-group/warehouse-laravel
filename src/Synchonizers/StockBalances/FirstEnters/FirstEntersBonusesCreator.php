@@ -72,8 +72,9 @@ class FirstEntersBonusesCreator implements FirstEntersCreator
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
         $ourBonuses = $this->warehouseRepository->getMapped(['morphMyWarehouse'])->keyBy('morphMyWarehouse.uuid');
+        $reserveQuantities = $this->warehouseRepository->storageReserveQuantities();
         $remoteBonuses = $this->findRemoteBonusesAsProducts();
-        $enterPositions = $this->buildEnterPositions($remoteBonuses, $ourBonuses);
+        $enterPositions = $this->buildEnterPositions($remoteBonuses, $ourBonuses, $reserveQuantities);
         $this->enterMaker->addNewEnter($organization, $store, $enterPositions, self::BONUSES_ENTER_NAME);
     }
 
@@ -101,34 +102,41 @@ class FirstEntersBonusesCreator implements FirstEntersCreator
     /**
      * @param EntityList $chunkedRemotedVariants
      * @param Collection $ourBonuses
+     * @param Collection $reserveQuantities
      * @return EntityList
      */
-    private function buildEnterPositions(EntityList $chunkedRemotedVariants, Collection $ourBonuses): EntityList
+    private function buildEnterPositions(
+        EntityList $chunkedRemotedVariants,
+        Collection $ourBonuses,
+        Collection $reserveQuantities
+    ): EntityList
     {
         $enterPositions = new EntityList($this->client);
-        $chunkedRemotedVariants->each(function (Product $remoteBonus) use ($ourBonuses, $enterPositions) {
-            $this->collectEnterPositions($ourBonuses, $remoteBonus, $enterPositions);
+        $chunkedRemotedVariants->each(function (Product $remoteBonus) use ($ourBonuses, $enterPositions, $reserveQuantities) {
+            if (!empty($ourBonuses[$remoteBonus->id])) {
+                /** @var Bonus $ourBonus */
+                $ourBonus = $ourBonuses[$remoteBonus->id];
+                $stockQuantity = $this->calculateStockQuantity($reserveQuantities, $ourBonus);
+                if ($stockQuantity > 0) {
+                    $remoteBonus->quantity = $stockQuantity;
+                    $remoteBonus->price = 0;
+                    $enterPositions->push($remoteBonus);
+                }
+            }
         });
 
         return $enterPositions;
     }
 
     /**
-     * @param Collection $ourBonuses
-     * @param Product $remoteBonus
-     * @param EntityList $enterPositions
+     * @param Collection $reserveQuantities
+     * @param Bonus $ourBonus
+     * @return Collection|int
      */
-    private function collectEnterPositions(Collection $ourBonuses, Product $remoteBonus, EntityList $enterPositions): void
+    private function calculateStockQuantity(Collection $reserveQuantities, Bonus $ourBonus): int
     {
-        if (!empty($ourBonuses[$remoteBonus->id])) {
-            /** @var Bonus $ourBonus */
-            $ourBonus = $ourBonuses[$remoteBonus->id];
-            $stockQuantity = $ourBonus->available_quantity + $ourBonus->reserve;
-            if ($stockQuantity > 0) {
-                $remoteBonus->quantity = $stockQuantity;
-                $remoteBonus->price = 0;
-                $enterPositions->push($remoteBonus);
-            }
-        }
+        $reserveQuantity = $reserveQuantities[$ourBonus->id] ?? 0;
+
+        return $ourBonus->available_quantity + $reserveQuantity;
     }
 }

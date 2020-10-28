@@ -5,6 +5,7 @@ namespace SchGroup\MyWarehouse\Synchonizers\StockBalances\FirstEnters;
 use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
+use MoySklad\Components\FilterQuery;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Documents\Movements\Enter;
 use MoySklad\Components\Specs\QuerySpecs\QuerySpecs;
@@ -75,11 +76,12 @@ class FirstEntersVariantsCreator implements FirstEntersCreator
         $store = $this->storeDataKeeper->defineStore();
         $organization = $this->storeDataKeeper->defineOrganization();
         $ourVariants = $this->warehouseRepository->getMapped(['morphMyWarehouse'])->keyBy('morphMyWarehouse.uuid');
+        $reservedQuantities = $this->warehouseRepository->storageReserveQuantities();
         $sizeOfVariants = $ourVariants->count();
         $chunkCounter = 0;
         while ($chunkCounter <= $sizeOfVariants) {
             $chunkedRemotedVariants = $this->chunkRemoteVariants($chunkCounter);
-            $enterPositions = $this->buildEnterPositions($chunkedRemotedVariants, $ourVariants);
+            $enterPositions = $this->buildEnterPositions($chunkedRemotedVariants, $ourVariants, $reservedQuantities);
             $this->enterMaker->addNewEnter($organization, $store, $enterPositions);
             $chunkCounter += self::MAX_ENTER_SIZE;
         }
@@ -90,9 +92,11 @@ class FirstEntersVariantsCreator implements FirstEntersCreator
      */
     private function deleteOldEnters(): void
     {
-        Enter::query($this->client)->getList()->each(function (Enter $enter) {
-            $enter->delete();
-        });
+        Enter::query($this->client)
+            ->filter((new FilterQuery())->neq("name", FirstEntersBonusesCreator::BONUSES_ENTER_NAME))
+            ->each(function (Enter $enter) {
+                $enter->delete();
+            });
     }
 
     /**
@@ -111,34 +115,41 @@ class FirstEntersVariantsCreator implements FirstEntersCreator
     /**
      * @param EntityList $chunkedRemotedVariants
      * @param Collection $ourVariants
+     * @param Collection $reservedQuantities
      * @return EntityList
      */
-    private function buildEnterPositions(EntityList $chunkedRemotedVariants, Collection $ourVariants): EntityList
+    private function buildEnterPositions(
+        EntityList $chunkedRemotedVariants,
+        Collection $ourVariants,
+        Collection $reservedQuantities
+    ): EntityList
     {
         $enterPositions = new EntityList($this->client);
-        $chunkedRemotedVariants->each(function (Variant $remoteVariant) use ($ourVariants, $enterPositions) {
-            $this->collectEnterPositions($ourVariants, $remoteVariant, $enterPositions);
+        $chunkedRemotedVariants->each(function (Variant $remoteVariant) use ($ourVariants, $enterPositions, $reservedQuantities) {
+            if (!empty($ourVariants[$remoteVariant->id])) {
+                /** @var \App\Models\Products\Variant $ourVariant */
+                $ourVariant = $ourVariants[$remoteVariant->id];
+                $stockQuantity = $this->calculateStockQuantity($reservedQuantities, $ourVariant);
+                if ($stockQuantity > 0) {
+                    $remoteVariant->quantity = $stockQuantity;
+                    $remoteVariant->price = $this->variantLinker->defineBuyPrice($ourVariant)['value'];
+                    $enterPositions->push($remoteVariant);
+                }
+            }
         });
 
         return $enterPositions;
     }
 
     /**
-     * @param Collection $ourVariants
-     * @param Variant $remoteVariant
-     * @param EntityList $enterPositions
+     * @param Collection $reservedQuantities
+     * @param \App\Models\Products\Variant $ourVariant
+     * @return Collection|int
      */
-    private function collectEnterPositions(Collection $ourVariants, Variant $remoteVariant, EntityList $enterPositions): void
+    private function calculateStockQuantity(Collection $reservedQuantities, \App\Models\Products\Variant $ourVariant): int
     {
-        if (!empty($ourVariants[$remoteVariant->id])) {
-            /** @var \App\Models\Products\Variant $ourVariant */
-            $ourVariant = $ourVariants[$remoteVariant->id];
-            $stockQuantity = $ourVariant->available_quantity + $ourVariant->storage_reserve;
-            if ($stockQuantity > 0) {
-                $remoteVariant->quantity = $stockQuantity;
-                $remoteVariant->price = $this->variantLinker->defineBuyPrice($ourVariant)['value'];
-                $enterPositions->push($remoteVariant);
-            }
-        }
+        $reservedQuantity = $reservedQuantities[$ourVariant->id] ?? 0;
+
+        return $ourVariant->available_quantity + $reservedQuantity;
     }
 }

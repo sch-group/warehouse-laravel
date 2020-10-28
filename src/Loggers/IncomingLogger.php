@@ -4,7 +4,7 @@
 namespace SchGroup\MyWarehouse\Loggers;
 
 
-class IncomingLogger
+class IncomingLogger extends MyWarehouseLogger
 {
     const LOG_NAME = 'Incoming';
 
