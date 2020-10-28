@@ -4,6 +4,8 @@
 namespace SchGroup\MyWarehouse\Synchonizers\Entities;
 
 
+use SchGroup\MyWarehouse\Loggers\EntitySynchronizeLogger;
+
 abstract class AbstractEntitySynchronizer
 {
     /**
@@ -11,9 +13,16 @@ abstract class AbstractEntitySynchronizer
      */
     public function synchronize(): void
     {
-        $this->applyExistedUuidsToOurEntity();
+        try {
+            $this->applyExistedUuidsToOurEntity();
 
-        $this->addOurEntityToRemoteWarehouse();
+            $this->addOurEntityToRemoteWarehouse();
+
+        } catch (\Exception $exc) {
+            /** @var EntitySynchronizerLogger $logger */
+            $logger = app(EntitySynchronizeLogger::class);
+            $logger->error($exc->getCode() . " " . $exc->getMessage() . $exc->getTraceAsString() );
+        }
     }
 
     abstract protected function applyExistedUuidsToOurEntity(): void;

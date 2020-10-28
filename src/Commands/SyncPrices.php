@@ -8,7 +8,7 @@ use SchGroup\MyWarehouse\Synchonizers\Prices\PricesSynchronizer;
 use SchGroup\MyWarehouse\Synchonizers\Prices\VariantPricesSynchronizer;
 
 
-class SyncVariantPrices extends Command
+class SyncPrices extends Command
 {
     const ENTITY_SYNCHRONIZERS = [
         'variant' => VariantPricesSynchronizer::class,

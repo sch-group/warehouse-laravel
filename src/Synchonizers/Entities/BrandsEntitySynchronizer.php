@@ -7,6 +7,7 @@ use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Folders\ProductFolder;
+use SchGroup\MyWarehouse\Loggers\EntitySynchronizeLogger;
 use SchGroup\MyWarehouse\Repositories\BrandWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 
@@ -24,15 +25,21 @@ class BrandsEntitySynchronizer extends AbstractEntitySynchronizer
      * @var BrandWarehouseRepository
      */
     private $warehouseEntityRepository;
+    /**
+     * @var EntitySynchronizeLogger
+     */
+    private $logger;
 
     /**
      * BrandsSynchronizer constructor.
      * @param MoySklad $client
+     * @param EntitySynchronizeLogger $logger
      * @param BrandWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, BrandWarehouseRepository $warehouseEntityRepository)
+    public function __construct(MoySklad $client, EntitySynchronizeLogger $logger, BrandWarehouseRepository $warehouseEntityRepository)
     {
         $this->client = $client;
+        $this->logger = $logger;
         $this->warehouseEntityRepository = $warehouseEntityRepository;
     }
 
@@ -77,7 +84,7 @@ class BrandsEntitySynchronizer extends AbstractEntitySynchronizer
         }
 
         $createdRemoteBrands = (new EntityList($this->client, $remoteBrands))->massCreate();
-
+        $this->logger->info("Brands created: " . $createdRemoteBrands->toJson(0));
         $this->applyUuidsToOurEntity($createdRemoteBrands, $ourBrands);
     }
 }

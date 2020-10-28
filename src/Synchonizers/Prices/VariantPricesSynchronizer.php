@@ -6,7 +6,7 @@ use MoySklad\MoySklad;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\AbstractEntity;
 use MoySklad\Entities\Products\Variant;
-use SchGroup\MyWarehouse\Contracts\WarehouseEntityRepository;
+use SchGroup\MyWarehouse\Loggers\PricesUpdateLogger;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
@@ -23,16 +23,26 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     private $warehouseEntityRepository;
 
     /**
+     * @var PricesUpdateLogger
+     */
+    private $logger;
+    /**
      * @var VariantLinker
      */
     private $variantLinker;
 
     /**
      * VariantPricesSynchronizer constructor.
+     * @param MoySklad $client
+     * @param PricesUpdateLogger $logger
      * @param VariantWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseEntityRepository)
-    {
+    public function __construct(
+        MoySklad $client,
+        PricesUpdateLogger $logger,
+        VariantWarehouseRepository $warehouseEntityRepository
+    ) {
+        $this->logger = $logger;
         $this->client = $client;
         $this->warehouseEntityRepository = $warehouseEntityRepository;
         $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
@@ -45,11 +55,15 @@ class VariantPricesSynchronizer extends PricesSynchronizer
      */
     public function syncPrices(): void
     {
-        $mappedVariants = $this->warehouseEntityRepository->getMapped();
-        $remoteVariants = $this->findRemoteVariants();
-        $mappedVariants->chunk(self::CHUNK_SIZE)->each(function ($variants) use ($remoteVariants) {
-            $this->syncVariantsPrices($variants, $remoteVariants);
-        });
+        try {
+            $mappedVariants = $this->warehouseEntityRepository->getMapped();
+            $remoteVariants = $this->findRemoteVariants();
+            $mappedVariants->chunk(self::CHUNK_SIZE)->each(function ($variants) use ($remoteVariants) {
+                $this->syncVariantsPrices($variants, $remoteVariants);
+            });
+        } catch (\Exception $exc) {
+            $this->logger->info("CODE: " . $exc->getCode() . " " . $exc->getMessage() . $exc->getTraceAsString());
+        }
     }
 
     /**
@@ -64,7 +78,10 @@ class VariantPricesSynchronizer extends PricesSynchronizer
         Variant::query($this->client)->getList()->each(function (Variant $variant) use (&$remoteVariants) {
             $remoteVariants[$variant->id] = $variant;
         });
-
+//        Variant::query($this->client)->filter((new \MoySklad\Components\FilterQuery())->eq("code", 6783 ))
+//            ->each(function (Variant $variant) use (&$remoteVariants) {
+//                $remoteVariants[$variant->id] = $variant;
+//            });
         return $remoteVariants;
     }
 
@@ -108,9 +125,11 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     {
         if ($this->isNeedModify($ourVariant, $remoteVariant)) {
             dump($ourVariant);
+            $this->logBefore($ourVariant, $remoteVariant);
             $remoteVariant->buyPrice = $this->variantLinker->defineBuyPrice($ourVariant);
             $remoteVariant->salePrices = $this->variantLinker->defineSalePrices($ourVariant);
             $remoteVariant->buildUpdate()->execute();
+            $this->logAfter($ourVariant, $remoteVariant);
         }
     }
 
@@ -123,12 +142,8 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     {
         $ourBuyPrice = $this->variantLinker->defineBuyPrice($ourVariant)['value'];
         $salePrice = $this->variantLinker->defineSalePrices($ourVariant)[0]['value'];
-
-        if ($this->emptyColumns($remoteVariant, $ourBuyPrice, $salePrice)) {
-            return false;
-        }
-        $remoteBuyPrice = $remoteVariant->buyPrice->value;
-        $remoteSalePrice = $remoteVariant->salePrices[0]->value;
+        $remoteBuyPrice = $remoteVariant->buyPrice->value ?? 0;
+        $remoteSalePrice = $remoteVariant->salePrices[0]->value ?? 0;
         $buyPriceNotEqual = !$this->arePricesEqual($remoteBuyPrice, $ourBuyPrice);
         $salePriceNotEqual = !$this->arePricesEqual($remoteSalePrice, $salePrice);
 
@@ -136,26 +151,33 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     }
 
     /**
-     * @param AbstractEntity $remoteVariant
-     * @param $ourBuyPrice
-     * @param $salePrice
-     * @return bool
-     */
-    private function emptyColumns(AbstractEntity $remoteVariant, float $ourBuyPrice, float $salePrice): bool
-    {
-        return (empty($remoteVariant->buyPrice) || empty($ourBuyPrice)) ||
-            (empty($remoteVariant->salePrices) || empty($salePrice));
-    }
-
-    /**
-     * https://stackoverflow.com/questions/3148937/compare-floats-in-php
-     * Comparison for php float
      * @param float $a
      * @param float $b
      * @return bool
      */
     private function arePricesEqual(float $a, float $b): bool
     {
-        return abs(($a - $b)) < 0.00001;
+        return round($a) == round($b);
+    }
+
+    /**
+     * @param \App\Models\Products\Variant $ourVariant
+     * @param Variant $remoteVariant
+     */
+    private function logBefore(\App\Models\Products\Variant $ourVariant, Variant $remoteVariant): void
+    {
+        $this->logger->info("Variant change before $ourVariant->id buy price: "
+            . json_encode($remoteVariant->buyPrice ?? 0) . "sale price : " .
+            json_encode($remoteVariant->getSalePrices ?? 0));
+    }
+
+    /**
+     * @param \App\Models\Products\Variant $ourVariant
+     * @param Variant $remoteVariant
+     */
+    private function logAfter(\App\Models\Products\Variant $ourVariant, Variant $remoteVariant): void
+    {
+        $this->logger->info("Variant change after $ourVariant->id buy price : " . json_encode($remoteVariant->buyPrice)
+            . " sale price:" . json_encode($remoteVariant->salePrices));
     }
 }

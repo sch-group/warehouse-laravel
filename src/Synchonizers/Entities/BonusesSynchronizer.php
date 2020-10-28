@@ -10,6 +10,7 @@ use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Products\Product;
 use MoySklad\Entities\Folders\ProductFolder;
+use SchGroup\MyWarehouse\Loggers\EntitySynchronizeLogger;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\StoreDataKeeper;
 use SchGroup\MyWarehouse\Repositories\BonusWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
@@ -34,20 +35,27 @@ class BonusesSynchronizer extends AbstractEntitySynchronizer
      * @var StoreDataKeeper
      */
     private $storeDataKeeper;
+    /**
+     * @var EntitySynchronizeLogger
+     */
+    private $logger;
 
     /**
      * ProductsSynchronizer constructor.
      * @param MoySklad $client
      * @param StoreDataKeeper $storeDataKeeper
+     * @param EntitySynchronizeLogger $logger
      * @param BonusWarehouseRepository $warehouseEntityRepository
      */
     public function __construct(
         MoySklad $client,
         StoreDataKeeper $storeDataKeeper,
+        EntitySynchronizeLogger $logger,
         BonusWarehouseRepository $warehouseEntityRepository
     )
     {
         $this->client = $client;
+        $this->logger = $logger;
         $this->storeDataKeeper = $storeDataKeeper;
         $this->warehouseEntityRepository = $warehouseEntityRepository;
     }
@@ -107,6 +115,7 @@ class BonusesSynchronizer extends AbstractEntitySynchronizer
                     ->buildCreation()
                     ->addProductFolder($bonusFolder);
             })->massCreate();
+        $this->logger->info("Bonuses added: " . $createdRemoteBonuses->toJson(0));
 
         $this->applyUuidsToOurEntity($createdRemoteBonuses, $ourBonuses);
     }

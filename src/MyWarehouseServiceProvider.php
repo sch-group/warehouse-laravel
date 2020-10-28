@@ -5,10 +5,10 @@ namespace SchGroup\MyWarehouse;;
 
 use MoySklad\MoySklad;
 use Illuminate\Support\ServiceProvider;
+use SchGroup\MyWarehouse\Commands\SyncPrices;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\TestCreateOrder;
 use SchGroup\MyWarehouse\Commands\TestUpdateOrder;
-use SchGroup\MyWarehouse\Commands\SyncVariantPrices;
 use SchGroup\MyWarehouse\Commands\AddReservedOrders;
 use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
 
@@ -44,7 +44,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
     {
         $this->commands([
             SyncEntities::class,
-            SyncVariantPrices::class,
+            SyncPrices::class,
             AddFirstStockBalances::class,
             AddReservedOrders::class,
             TestCreateOrder::class,

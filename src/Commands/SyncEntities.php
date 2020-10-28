@@ -14,11 +14,11 @@ use SchGroup\MyWarehouse\Synchonizers\Entities\AbstractEntitySynchronizer;
 class SyncEntities extends Command
 {
     const ENTITY_SYNCHRONIZERS = [
-        'bonus' => BonusesSynchronizer::class,
+        'brand' => BrandsEntitySynchronizer::class,
         'product' => ProductsSynchronizer::class,
         'variant' => VariantsSynchronizer::class,
-        'brand' => BrandsEntitySynchronizer::class,
         'order_status' => OrderStatusSynchronizer::class,
+        'bonus' => BonusesSynchronizer::class,
     ];
     /**
      * The name and signature of the console command.

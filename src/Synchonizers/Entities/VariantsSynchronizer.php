@@ -9,6 +9,7 @@ use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
 use MoySklad\Entities\Products\Variant;
 use MoySklad\Entities\Products\Product;
+use SchGroup\MyWarehouse\Loggers\EntitySynchronizeLogger;
 use SchGroup\MyWarehouse\Repositories\VariantWarehouseRepository;
 use SchGroup\MyWarehouse\Synchonizers\Helpers\WarehouseEntityHelper;
 use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
@@ -33,15 +34,24 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
      * @var VariantLinker
      */
     private $variantLinker;
+    /**
+     * @var EntitySynchronizeLogger
+     */
+    private $logger;
 
     /**
      * VariantsSynchronizer constructor.
      * @param MoySklad $client
+     * @param EntitySynchronizeLogger $logger
      * @param VariantWarehouseRepository $warehouseEntityRepository
      */
-    public function __construct(MoySklad $client, VariantWarehouseRepository $warehouseEntityRepository)
-    {
+    public function __construct(
+        MoySklad $client,
+        EntitySynchronizeLogger $logger,
+        VariantWarehouseRepository $warehouseEntityRepository
+    ) {
         $this->client = $client;
+        $this->logger = $logger;
         $this->warehouseEntityRepository = $warehouseEntityRepository;
         $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
@@ -102,6 +112,7 @@ class VariantsSynchronizer extends AbstractEntitySynchronizer
             $createdVariants = (new EntityList($this->client, $remoteVariants))
                 ->each($this->addRemoteProductRelationToVariant($existedRemoteProducts))
                 ->massCreate();
+            $this->logger->info("Variants created: " . $createdVariants->toJson(0));
             $this->applyUuidsToOurEntity($createdVariants, $ourVariants);
 
         } catch (\Exception $exception) {
