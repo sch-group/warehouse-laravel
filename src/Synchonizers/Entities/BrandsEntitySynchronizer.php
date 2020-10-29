@@ -84,7 +84,8 @@ class BrandsEntitySynchronizer extends AbstractEntitySynchronizer
         }
 
         $createdRemoteBrands = (new EntityList($this->client, $remoteBrands))->massCreate();
-        $this->logger->info("Brands created: " . $createdRemoteBrands->toJson(0));
         $this->applyUuidsToOurEntity($createdRemoteBrands, $ourBrands);
+
+        $this->logger->info("Brands created: " . $createdRemoteBrands->toJson(0));
     }
 }

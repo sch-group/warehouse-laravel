@@ -7,7 +7,6 @@ namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 use MoySklad\MoySklad;
 use MoySklad\Lists\EntityList;
 use Illuminate\Support\Collection;
-use MoySklad\Entities\Organization;
 use SchGroup\MyWarehouse\Traits\HasMyWarehouseEntity;
 
 trait WarehouseEntityHelper

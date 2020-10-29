@@ -79,8 +79,8 @@ class ProductsSynchronizer extends AbstractEntitySynchronizer
         $createdRemoteProducts = (new EntityList($this->client, $remoteProducts))
             ->each($this->addRemoteBrandRelationToProduct($remoteBrands))
             ->massCreate();
-        $this->logger->info("Products created: " . $createdRemoteProducts->toJson(0));
         $this->applyUuidsToOurEntity($createdRemoteProducts, $ourProducts);
+        $this->logger->info("Products created: " . $createdRemoteProducts->toJson(0));
     }
 
     /**

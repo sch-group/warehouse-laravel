@@ -11,5 +11,8 @@ interface VariantLinker
 
     public function defineSalePrices(\App\Models\Products\Variant $variant): array;
 
+    public function defineVatRate(\App\Models\Products\Variant $variant): int;
+
     public function linkRemoteProductToVariant(Variant $remoteVariant, Product $remoteProduct): void;
+
 }

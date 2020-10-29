@@ -19,7 +19,7 @@ abstract class AbstractEntitySynchronizer
             $this->addOurEntityToRemoteWarehouse();
 
         } catch (\Exception $exc) {
-            /** @var EntitySynchronizerLogger $logger */
+            /** @var EntitySynchronizeLogger $logger */
             $logger = app(EntitySynchronizeLogger::class);
             $logger->error($exc->getCode() . " " . $exc->getMessage() . $exc->getTraceAsString() );
         }

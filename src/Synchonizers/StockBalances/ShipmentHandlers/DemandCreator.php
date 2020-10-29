@@ -47,7 +47,7 @@ class DemandCreator extends DemandHandler
         $store = $this->remoteOrder->relations->find(Store::class);
         $positions = $this->buildPositionsFromRemoteOrder();
         $this->logger->info("Order {$this->remoteOrder->name} demand positions: " . $positions->toJson(0));
-        $demand = new Demand($this->client, ['name' => (string)$this->remoteOrder->code]);
+        $demand = new Demand($this->client, ['name' => (string)$this->remoteOrder->name]);
 
         $demand->buildCreation()
             ->addStore($store)
@@ -75,6 +75,7 @@ class DemandCreator extends DemandHandler
                 $remotePosition = $this->defineRemoteItemOrBonusPosition($customerOrderPosition)->fresh();
                 $remotePosition->quantity = $customerOrderPosition->quantity;
                 $remotePosition->price = $customerOrderPosition->price;
+                $remotePosition->vat = $customerOrderPosition->vat;
                 $collectedPositions[] = $remotePosition;
             });
 

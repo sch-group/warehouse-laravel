@@ -92,11 +92,10 @@ class BonusesSynchronizer extends AbstractEntitySynchronizer
      */
     private function findNotMappedBonuses(): Collection
     {
-        $ourBonusesMapped = $this->warehouseEntityRepository->getNotMapped()
+        return $this->warehouseEntityRepository->getNotMapped()
             ->keyBy(function (Bonus $bonus) {
                 return self::BONUS_CODE_PREFIX . $bonus['id'];
-            });;
-        return $ourBonusesMapped;
+            });
     }
 
     /**
@@ -115,6 +114,7 @@ class BonusesSynchronizer extends AbstractEntitySynchronizer
                     ->buildCreation()
                     ->addProductFolder($bonusFolder);
             })->massCreate();
+
         $this->logger->info("Bonuses added: " . $createdRemoteBonuses->toJson(0));
 
         $this->applyUuidsToOurEntity($createdRemoteBonuses, $ourBonuses);

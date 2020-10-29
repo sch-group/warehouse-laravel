@@ -3,14 +3,15 @@
 
 namespace SchGroup\MyWarehouse\Synchonizers\Helpers;
 
-use MoySklad\Entities\Products\Product;
 use MoySklad\MoySklad;
 use App\Models\Orders\Order;
 use App\Models\Bonuses\Bonus;
 use App\Models\Orders\Status;
 use MoySklad\Lists\EntityList;
 use App\Models\Orders\OrderItem;
+use MoySklad\Entities\Products\Product;
 use MoySklad\Entities\Products\Variant;
+use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 class OrderPositionsBuilder
 {
@@ -19,9 +20,18 @@ class OrderPositionsBuilder
      */
     private $client;
 
+    /**
+     * @var VariantLinker
+     */
+    private $variantLinker;
+    /**
+     * OrderPositionsBuilder constructor.
+     * @param MoySklad $client
+     */
     public function __construct(MoySklad $client)
     {
         $this->client = $client;
+        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
@@ -54,6 +64,7 @@ class OrderPositionsBuilder
                 $remoteVariant->quantity = $orderItem->quantity;
                 $remoteVariant->reserve = $itemsMustBeReserved ? $orderItem->quantity : 0;
                 $remoteVariant->price = (round($orderItem->discounted_price / $orderItem->quantity, 2) * 100);
+                $remoteVariant->vat = $this->variantLinker->defineVatRate($orderItem->variant);
                 $positions[] = $remoteVariant;
             }
         });

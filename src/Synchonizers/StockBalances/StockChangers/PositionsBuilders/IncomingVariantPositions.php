@@ -10,6 +10,7 @@ use App\Models\Warehouse\WarehouseHistory;
 use App\Models\Warehouse\WarehouseHistoryItem;
 use SchGroup\MyWarehouse\Contracts\PositionBuilder;
 use App\Models\Warehouse\Bonus\WarehouseBonusHistory;
+use SchGroup\MyWarehouse\Synchonizers\Entities\Linkers\VariantLinker;
 
 class IncomingVariantPositions implements PositionBuilder
 {
@@ -19,12 +20,17 @@ class IncomingVariantPositions implements PositionBuilder
     private $client;
 
     /**
+     * @var VariantLinker
+     */
+    private $variantLinker;
+    /**
      * VariantSupplyPositionsBuilder constructor.
      * @param MoySklad $client
      */
     public function __construct(MoySklad $client)
     {
         $this->client = $client;
+        $this->variantLinker = app(config('my_warehouse.variant_linker_class'));
     }
 
     /**
@@ -40,6 +46,7 @@ class IncomingVariantPositions implements PositionBuilder
             $remoteVariant = Variant::query($this->client)->byId($uuid);
             $remoteVariant->quantity = $historyItem->quantity_new - $historyItem->quantity_old;
             $remoteVariant->price = ($historyItem->purchase_price / $remoteVariant->quantity) * 100;
+            $remoteVariant->vat = $this->variantLinker->defineVatRate($historyItem->variant);
             $supplyPositions[] = $remoteVariant;
         });
 
