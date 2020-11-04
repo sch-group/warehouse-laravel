@@ -34,6 +34,9 @@ class AddFirstStockBalances extends Command
      */
     public function handle()
     {
+        if(!isMyWarehouseProd()) {
+            return;
+        }
         $entityType = $this->option('entity');
         /** @var FirstEntersCreator $firstEntersCreator */
         $firstEntersCreator = app(self::ENTITY_SYNCHRONIZERS[$entityType]);

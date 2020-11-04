@@ -12,7 +12,7 @@ class MyWarehouseCreateOrderListener
      */
     public function handle(OrderWasCreated $orderWasCreated)
     {
-        if (isProduction()) {
+        if (isMyWarehouseProd() && empty($orderWasCreated->order->getUuid())) {
             CreateOrderInMyWarehouseJob::dispatch($orderWasCreated->order)->onQueue('orders');
         }
     }

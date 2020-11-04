@@ -29,7 +29,7 @@ class MyWarehouseUpdateOrderListener
         $order = $event->order;
         $orderBeforeUpdate = $event->orderBeforeUpdate;
 
-        return isProduction() &&
+        return isMyWarehouseProd() &&
             ($event->orderStatusHasBeenChanged() || $this->itemsIsChanged($orderBeforeUpdate, $order)) &&
             !empty($order->getUuid());
     }
@@ -46,6 +46,7 @@ class MyWarehouseUpdateOrderListener
 
         return $orderItemsIsChanged || $bonusesIsChanged;
     }
+
     /**
      * @param Collection $itemsBefore
      * @param Collection $itemsAfter

@@ -40,6 +40,9 @@ class SyncEntities extends Command
      */
     public function handle()
     {
+        if(!isMyWarehouseProd()) {
+            return;
+        }
         $entityType = $this->option('entity');
         /** @var AbstractEntitySynchronizer $entitySynchronizer*/
         $entitySynchronizer = app(self::ENTITY_SYNCHRONIZERS[$entityType]);

@@ -61,12 +61,15 @@ class OrderModifier
         $newRemoteOrderStatus = $remoteStatuses[$order->status->getUuid()];
         $orderPositions = $this->orderPositionsBuilder->collectOrderPositions($order);
         $this->logger->info("Order {$order->order_number} positions to update:" . $orderPositions->toJson(0));
+
         $remoteOrder->buildUpdate()
             ->addState($newRemoteOrderStatus)
             ->addPositionList($orderPositions)
             ->execute();
+
         $this->logger->info("Order {$order->order_number} has updated");
-        (new ShipmentDemandManager($order, $remoteOrder))->manage();
+
+        (new ShipmentDemandManager($order, $remoteOrder))->createOrDestroyDemand();
 
     }
 }

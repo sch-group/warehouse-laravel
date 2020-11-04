@@ -28,6 +28,9 @@ class AddReservedOrders extends Command
      */
     public function handle()
     {
+        if(!isMyWarehouseProd()) {
+            return;
+        }
         /** @var ReservedOrdersSynchronizer $reservedOrdersSynchronizer */
         $reservedOrdersSynchronizer = app(ReservedOrdersSynchronizer::class);
 

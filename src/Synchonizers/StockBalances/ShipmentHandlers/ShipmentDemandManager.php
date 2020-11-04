@@ -50,7 +50,7 @@ class ShipmentDemandManager
     /**
      *
      */
-    public function manage(): void
+    public function createOrDestroyDemand(): void
     {
         $handler = $this->buildHandler();
         if($handler) {

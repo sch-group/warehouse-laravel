@@ -63,7 +63,7 @@ class OrderPositionsBuilder
             if ($remoteVariant) {
                 $remoteVariant->quantity = $orderItem->quantity;
                 $remoteVariant->reserve = $itemsMustBeReserved ? $orderItem->quantity : 0;
-                $remoteVariant->price = (round($orderItem->discounted_price / $orderItem->quantity, 2) * 100);
+                $remoteVariant->price = $this->variantLinker->defineOrderItemPrice($orderItem);
                 $remoteVariant->vat = $this->variantLinker->defineVatRate($orderItem->variant);
                 $positions[] = $remoteVariant;
             }

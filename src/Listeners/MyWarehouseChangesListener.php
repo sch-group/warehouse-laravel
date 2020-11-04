@@ -29,7 +29,7 @@ class MyWarehouseChangesListener
      */
     public function handle(MyWarehouseNeedChange $event)
     {
-        if(isProduction()) {
+        if(isMyWarehouseProd()) {
             PerformChangeInMyWarehouseJob::dispatch($event->warehouseHistory);
         }
     }
