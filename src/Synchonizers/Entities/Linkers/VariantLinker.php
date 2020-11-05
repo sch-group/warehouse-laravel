@@ -37,7 +37,7 @@ interface VariantLinker
      * @param WarehouseHistoryItem $historyItem
      * @return float
      */
-    public function defineIncomingPrice(WarehouseHistoryItem $historyItem): float;
+    public function defineIncomingPrice(WarehouseHistoryItem $historyItem, Variant $remoteVariant): float;
 
     /**
      * @param Variant $remoteVariant
