@@ -124,7 +124,6 @@ class VariantPricesSynchronizer extends PricesSynchronizer
     public function syncVariant(\App\Models\Products\Variant $ourVariant, Variant $remoteVariant): void
     {
         if ($this->isNeedModify($ourVariant, $remoteVariant)) {
-            dump($ourVariant);
             $this->logBefore($ourVariant, $remoteVariant);
             $remoteVariant->buyPrice = $this->variantLinker->defineBuyPrice($ourVariant);
             $remoteVariant->salePrices = $this->variantLinker->defineSalePrices($ourVariant);

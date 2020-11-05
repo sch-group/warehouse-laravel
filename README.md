@@ -14,9 +14,12 @@ php artisan migrate
 
 Команда ниже заливает в мой склад товары, бренды, упаковки, статусы, бонусы в мой склад
 ```bash
-php artisan my-warehouse:synchronize --entity={}
+php artisan my-warehouse:synchronize --entity=brand
+php artisan my-warehouse:synchronize --entity=product
+php artisan my-warehouse:synchronize --entity=variant
+php artisan my-warehouse:synchronize --entity=bonus
+php artisan my-warehouse:synchronize --entity=order_status
 ```
-entity принимает значени brand,product,variant,bonus,order_status.
 Перед запуском необходимо выполнить для всех этих сущностей.
 Команда свяжет сущности в полиморфной таблице my_warehouse_entities
 
