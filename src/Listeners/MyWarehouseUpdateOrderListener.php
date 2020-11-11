@@ -6,6 +6,7 @@ use App\Models\Orders\Order;
 use Illuminate\Support\Collection;
 use App\Services\Order\DTO\OrderDTO;
 use App\Events\Order\OrderWasUpdated;
+use SchGroup\MyWarehouse\Jobs\CreateOrderInMyWarehouseJob;
 use SchGroup\MyWarehouse\Jobs\UpdateOrderInMyWarehouseJob;
 
 class MyWarehouseUpdateOrderListener
@@ -17,6 +18,9 @@ class MyWarehouseUpdateOrderListener
     {
         if ($this->isNeedToUpdateOrderInMyWarehouse($event)) {
             UpdateOrderInMyWarehouseJob::dispatch($event->order)->onQueue('orders');
+        }
+        if ($this->isNeedToCreateOrder($event->order)) {
+            CreateOrderInMyWarehouseJob::dispatch($event->order)->onQueue('orders');
         }
     }
 
@@ -67,4 +71,12 @@ class MyWarehouseUpdateOrderListener
         return $bonusesBefore->sum('quantity') != $bonusesAfter->sum('quantity');
     }
 
+    /**
+     * @param Order $order
+     * @return bool
+     */
+    private function isNeedToCreateOrder(Order $order): bool
+    {
+        return isMyWarehouseProd() && empty($order->getUuid());
+    }
 }
