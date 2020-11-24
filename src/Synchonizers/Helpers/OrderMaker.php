@@ -71,7 +71,7 @@ class OrderMaker
             })->massCreate();
 
         $uuid = $createdOrderList[0]->id;
-        $ourOrder->saveMyWareHouseEntity($uuid, $ourOrder->order_number);
+        $ourOrder->saveMyWareHouseEntity($uuid, $ourOrder->id);
         $this->logger->info("Order has been created with uuid: {$uuid}");
     }
 

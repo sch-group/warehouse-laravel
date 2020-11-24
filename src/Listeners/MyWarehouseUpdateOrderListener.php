@@ -58,7 +58,10 @@ class MyWarehouseUpdateOrderListener
      */
     private function orderItemsIsChanged(Collection $itemsBefore, Collection $itemsAfter): bool
     {
-        return $itemsBefore->sum('discounted_price') != $itemsAfter->sum('discounted_price');
+        $itemsAfterKeyed = $itemsAfter->pluck('quantity', 'id');
+        $itemsBeforeKeyed = $itemsBefore->pluck('quantity', 'id');
+
+        return $itemsAfterKeyed->diff($itemsBeforeKeyed)->isNotEmpty();
     }
 
     /**
@@ -68,7 +71,10 @@ class MyWarehouseUpdateOrderListener
      */
     private function bonusesIsChanged(Collection $bonusesBefore, Collection $bonusesAfter): bool
     {
-        return $bonusesBefore->sum('quantity') != $bonusesAfter->sum('quantity');
+        $bonusesAfterKeyed = $bonusesAfter->pluck('quantity', 'id');
+        $bonusesBeforeKeyed = $bonusesBefore->pluck('quantity', 'id');
+
+        return $bonusesAfterKeyed->diff($bonusesBeforeKeyed)->isNotEmpty();
     }
 
     /**

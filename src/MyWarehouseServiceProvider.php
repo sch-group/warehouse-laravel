@@ -9,6 +9,7 @@ use SchGroup\MyWarehouse\Commands\SyncPrices;
 use SchGroup\MyWarehouse\Commands\SyncEntities;
 use SchGroup\MyWarehouse\Commands\AddReservedOrders;
 use SchGroup\MyWarehouse\Commands\AddFirstStockBalances;
+use SchGroup\MyWarehouse\Commands\UpdateAllReservedOrders;
 
 class MyWarehouseServiceProvider extends ServiceProvider
 {
@@ -45,6 +46,7 @@ class MyWarehouseServiceProvider extends ServiceProvider
             SyncPrices::class,
             AddFirstStockBalances::class,
             AddReservedOrders::class,
+            UpdateAllReservedOrders::class,
         ]);
     }
 
