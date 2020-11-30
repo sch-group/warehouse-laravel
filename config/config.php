@@ -4,5 +4,6 @@ return [
     'password' => '',
     'store_uuid' => '',
     'organization_uuid' => '',
-    'variant_linker_class' => ''
+    'variant_linker_class' => '',
+    'bonus_linker_class' => '',
 ];
