@@ -30,7 +30,7 @@ class FindingBonusPositions implements PositionBuilder
     public function __construct(MoySklad $client)
     {
         $this->client = $client;
-        $this->bonusLinker = app(config('my_warehouse.variant_linker_class'));
+        $this->bonusLinker = app(config('my_warehouse.bonus_linker_class'));
     }
 
     /**
